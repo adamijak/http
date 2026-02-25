@@ -1,0 +1,8 @@
+# Example using environment variables
+# Set these before running: export API_TOKEN="your-token" API_KEY="your-key"
+
+GET https://httpbin.org/get HTTP/1.1
+Host: httpbin.org
+Authorization: Bearer ${API_TOKEN}
+X-API-Key: $API_KEY
+User-Agent: http-client/1.0

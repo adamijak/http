@@ -1,0 +1,11 @@
+# POST request with JSON body
+POST https://httpbin.org/post HTTP/1.1
+Host: httpbin.org
+Content-Type: application/json
+User-Agent: http-client/1.0
+
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "age": 30
+}

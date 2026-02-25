@@ -1,0 +1,13 @@
+# Example using shell command execution
+# This generates a UUID and timestamp dynamically
+
+POST https://httpbin.org/post HTTP/1.1
+Host: httpbin.org
+Content-Type: application/json
+X-Request-ID: $(uuidgen)
+User-Agent: http-client/1.0
+
+{
+  "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "message": "Request sent at Unix time: $(date +%s)"
+}
