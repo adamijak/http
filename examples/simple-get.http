@@ -1,0 +1,5 @@
+# Simple GET request example
+GET https://httpbin.org/get HTTP/1.1
+Host: httpbin.org
+User-Agent: http-client/1.0
+Accept: application/json
