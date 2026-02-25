@@ -19,8 +19,15 @@ func main() {
 	dryRun := flag.Bool("dry-run", false, "Show preprocessed and validated request without sending")
 	noColor := flag.Bool("no-color", false, "Disable colored output")
 	verbose := flag.Bool("v", false, "Verbose output")
+	version := flag.Bool("version", false, "Show version information")
 	
 	flag.Parse()
+
+	// Show version
+	if *version {
+		fmt.Printf("%s version %s\n", AppName, Version)
+		return
+	}
 
 	// Read from stdin
 	input, err := io.ReadAll(os.Stdin)
