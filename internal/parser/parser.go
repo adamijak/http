@@ -169,7 +169,7 @@ func parseHTTP(content string) (*models.HTTPRequest, error) {
 	requestLine := strings.TrimSpace(lines[requestLineIdx])
 	parts := strings.Fields(requestLine)
 	if len(parts) < 2 {
-		return nil, fmt.Errorf("invalid request line: %s", requestLine)
+		return nil, fmt.Errorf("invalid request line (must contain at least METHOD and URL): %s", requestLine)
 	}
 	
 	req.Method = parts[0]

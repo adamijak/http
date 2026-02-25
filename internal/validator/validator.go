@@ -9,6 +9,10 @@ import (
 	"github.com/adamijak/http/internal/models"
 )
 
+// Supported HTTP versions for validation
+// AI Agent Note: Add new versions here as they become standardized
+var supportedHTTPVersions = []string{"HTTP/1.0", "HTTP/1.1", "HTTP/2", "HTTP/2.0", "HTTP/3"}
+
 // ValidationResult holds validation errors and warnings
 // AI Agent Note: Clear separation between errors (must fix) and warnings (should fix)
 type ValidationResult struct {
@@ -156,10 +160,8 @@ func validateURL(req *models.HTTPRequest, result *ValidationResult) {
 
 // validateVersion checks if the HTTP version is valid
 func validateVersion(req *models.HTTPRequest, result *ValidationResult) {
-	validVersions := []string{"HTTP/1.0", "HTTP/1.1", "HTTP/2", "HTTP/2.0", "HTTP/3"}
-	
 	valid := false
-	for _, v := range validVersions {
+	for _, v := range supportedHTTPVersions {
 		if req.Version == v {
 			valid = true
 			break

@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"crypto/tls"
 	"fmt"
+	"io"
 	"net"
 	"net/url"
 	"strconv"
@@ -169,7 +170,7 @@ func readResponse(conn net.Conn) (*models.HTTPResponse, error) {
 		contentLength, err := strconv.Atoi(contentLengthStr)
 		if err == nil && contentLength > 0 {
 			body := make([]byte, contentLength)
-			_, err = reader.Read(body)
+			_, err = io.ReadFull(reader, body)
 			if err != nil {
 				return nil, fmt.Errorf("failed to read body: %w", err)
 			}
@@ -233,7 +234,7 @@ func readChunkedBody(reader *bufio.Reader) (string, error) {
 		
 		// Read chunk data
 		chunk := make([]byte, chunkSize)
-		_, err = reader.Read(chunk)
+		_, err = io.ReadFull(reader, chunk)
 		if err != nil {
 			return "", err
 		}
