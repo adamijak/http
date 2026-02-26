@@ -113,7 +113,7 @@ echo ""
 # Test 12: Save request to file
 echo "Test 12: Save RFC compliant request to file"
 TEMP_FILE="/tmp/test-save-request-$$.http"
-cat examples/simple-get.http | ./http -save-request "$TEMP_FILE" > /dev/null 2>&1
+./http -save-request "$TEMP_FILE" < examples/simple-get.http > /dev/null 2>&1
 if [ -f "$TEMP_FILE" ]; then
     echo "✓ Request saved to file"
     rm -f "$TEMP_FILE"
@@ -126,7 +126,7 @@ echo ""
 # Test 13: Load request from file
 echo "Test 13: Load RFC compliant request from file"
 TEMP_FILE="/tmp/test-load-request-$$.http"
-cat examples/simple-get.http | ./http -save-request "$TEMP_FILE" > /dev/null 2>&1
+./http -save-request "$TEMP_FILE" < examples/simple-get.http > /dev/null 2>&1
 ./http -load-request "$TEMP_FILE" -dry-run > /dev/null 2>&1
 if [ $? -eq 0 ]; then
     echo "✓ Request loaded from file"
