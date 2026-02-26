@@ -1,0 +1,9 @@
+# Example: Custom headers for API authentication
+GET https://api.example.com/v1/data HTTP/1.1
+Host: api.example.com
+Accept: application/json
+X-API-Key: ${API_KEY}
+X-Request-ID: $(uuidgen)
+X-Client-Version: 1.0.0
+Cache-Control: no-cache
+User-Agent: http-client/1.0

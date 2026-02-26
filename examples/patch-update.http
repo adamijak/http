@@ -1,0 +1,10 @@
+# Example: PATCH request for partial update
+PATCH https://api.example.com/users/789 HTTP/1.1
+Host: api.example.com
+Content-Type: application/json
+Authorization: Bearer ${API_TOKEN}
+User-Agent: http-client/1.0
+
+{
+  "email": "newemail@example.com"
+}

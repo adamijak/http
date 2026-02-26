@@ -1,7 +1,7 @@
 # Makefile for HTTP Client Tool
 # AI Agent Note: Simple build automation
 
-.PHONY: build test unittest clean install examples help format lint check
+.PHONY: build test unittest e2etest clean install examples help format lint check
 
 # Default target
 all: build
@@ -24,8 +24,14 @@ unittest:
 	go test ./... -v
 	@echo "Unit tests passed."
 
+# Run E2E tests
+e2etest:
+	@echo "Running E2E tests..."
+	go test -v e2e_test.go
+	@echo "E2E tests passed."
+
 # Check formatting, linting, and tests
-check: format lint unittest
+check: format lint unittest e2etest
 	@echo "Running integration test suite..."
 	./test.sh
 
@@ -87,6 +93,7 @@ help:
 	@echo "  make format     - Format all Go files with gofmt"
 	@echo "  make lint       - Lint code with go vet"
 	@echo "  make unittest   - Run unit tests"
+	@echo "  make e2etest    - Run E2E tests with test server"
 	@echo "  make test       - Run integration tests with example files"
 	@echo "  make check      - Format, lint, and run all tests"
 	@echo "  make examples   - Run all example requests"
