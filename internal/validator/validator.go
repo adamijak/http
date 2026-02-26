@@ -88,6 +88,7 @@ func (v *ValidationResult) PrintColored(w io.Writer) {
 // - Valid HTTP version
 // - Required headers for certain methods
 // - Content-Length for requests with body
+// - RFC compliance (request line should use path, not full URL)
 func Validate(req *models.HTTPRequest, noSecure bool) *ValidationResult {
 	result := &ValidationResult{
 		Errors:   []string{},
@@ -97,7 +98,10 @@ func Validate(req *models.HTTPRequest, noSecure bool) *ValidationResult {
 	// Validate HTTP method
 	validateMethod(req, result)
 
-	// Validate URL
+	// Validate RFC compliance for request line format (before URL modification)
+	validateRequestLineFormat(req, result)
+
+	// Validate URL (may modify req.URL to construct full URL from path)
 	validateURL(req, result, noSecure)
 
 	// Validate HTTP version
@@ -272,6 +276,23 @@ func validateBody(req *models.HTTPRequest, result *ValidationResult) {
 		if _, ok := req.Headers["Content-Type"]; !ok {
 			result.Warnings = append(result.Warnings,
 				"Content-Type header is recommended when sending a body")
+		}
+	}
+}
+
+// validateRequestLineFormat checks if the request line format is RFC compliant
+// RFC 7230 specifies that the request-target in the request line should be
+// either an absolute path or an absolute form (for proxy requests).
+// When using HTTP/1.1 with a Host header, the path form is standard.
+func validateRequestLineFormat(req *models.HTTPRequest, result *ValidationResult) {
+	// Check if URL contains a full scheme (http:// or https://)
+	if strings.HasPrefix(req.URL, "http://") || strings.HasPrefix(req.URL, "https://") {
+		parsedURL, err := url.Parse(req.URL)
+		if err == nil && parsedURL.Host != "" {
+			// This is a full URL, add a warning for RFC compliance
+			// The output will be converted to path-only format automatically
+			result.Warnings = append(result.Warnings,
+				"Request line should use path-only format (e.g., /v1.0/me) with Host header instead of full URL for RFC compliance")
 		}
 	}
 }

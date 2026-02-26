@@ -105,9 +105,9 @@ func TestHTTPRequestToRawRequest(t *testing.T) {
 
 	raw := req.ToRawRequest()
 
-	// Check request line
-	if !strings.Contains(raw, "GET https://example.com/api HTTP/1.1") {
-		t.Error("Expected raw request to contain request line")
+	// Check request line - should have path only, not full URL (RFC compliant)
+	if !strings.Contains(raw, "GET /api HTTP/1.1") {
+		t.Errorf("Expected raw request to contain 'GET /api HTTP/1.1', got: %s", strings.Split(raw, "\r\n")[0])
 	}
 
 	// Check headers
