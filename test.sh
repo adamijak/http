@@ -192,4 +192,28 @@ else
 fi
 echo ""
 
+# Test 17: Pipeline flow - HTP to RFC to tool again
+echo "Test 17: Pipeline flow (--no-send output can be piped back)"
+TEMP_FILE="/tmp/test-pipeline-$$.http"
+cat > "$TEMP_FILE" << 'INNER_EOF'
+# Comment
+GET /api HTTP/1.1
+Host: example.com
+INNER_EOF
+
+export TEST_PIPE_VAR="test-value"
+OUTPUT1=$(./http -f "$TEMP_FILE" --no-send 2>&1)
+OUTPUT2=$(echo "$OUTPUT1" | ./http --no-send 2>&1)
+
+if echo "$OUTPUT2" | grep -q "https://example.com/api"; then
+    echo "✓ Pipeline flow works"
+    rm -f "$TEMP_FILE"
+else
+    echo "✗ Pipeline flow failed"
+    echo "Output: $OUTPUT2"
+    rm -f "$TEMP_FILE"
+    exit 1
+fi
+echo ""
+
 echo "=== All tests passed! ==="

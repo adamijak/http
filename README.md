@@ -298,6 +298,13 @@ cat template.http | ./http --no-send
 
 # Or pipe to other tools (use -a to handle CRLF line endings)
 ./http -f template.http --no-send | grep -a "Authorization"
+
+# Pipeline: convert and then send
+./http -f template.http --no-send | ./http
+
+# Or save and send later
+./http -f template.http --no-send > request.http
+./http -f request.http
 ```
 
 The output is in **RFC compliant format** with:
@@ -306,7 +313,7 @@ The output is in **RFC compliant format** with:
 - Comments removed
 - Proper CRLF (`\r\n`) line endings
 - Auto-added headers (Content-Length, Host)
-- Ready to send over the wire
+- Ready to send over the wire or pipe to another tool
 
 ### Load and Send Any Format
 
