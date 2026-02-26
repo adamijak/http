@@ -66,6 +66,7 @@ EOF
 Options:
   -dry-run       Show preprocessed and validated request without sending
   -no-color      Disable colored output
+  -no-secure     Send request in plain HTTP instead of HTTPS
   -v             Verbose output
 ```
 
@@ -77,6 +78,22 @@ Options:
 GET https://api.example.com/users HTTP/1.1
 Host: api.example.com
 User-Agent: MyClient/1.0
+```
+
+#### Path-Only Request (RFC Standard)
+
+You can use just the path and specify the host in the Host header:
+
+```http
+GET /users HTTP/1.1
+Host: api.example.com
+User-Agent: MyClient/1.0
+```
+
+By default, this will use HTTPS. To force plain HTTP, use the `--no-secure` flag:
+
+```bash
+cat request.http | ./http --no-secure
 ```
 
 #### POST Request with Body
@@ -195,13 +212,32 @@ cat request.http | ./http -no-color
 cat request.http | ./http -v
 ```
 
+### Send Plain HTTP Request
+
+Use the `--no-secure` flag to force plain HTTP instead of HTTPS:
+
+```bash
+# Force HTTP for a path-only request
+cat <<EOF | ./http --no-secure
+GET /api/users HTTP/1.1
+Host: example.com
+EOF
+
+# Force HTTP even when URL has https://
+cat <<EOF | ./http --no-secure
+GET https://example.com/api/users HTTP/1.1
+Host: example.com
+EOF
+```
+
 ## Validation Rules
 
 The tool validates requests against HTTP standards:
 
 ### Errors (Must Fix)
 - Missing or invalid URL
-- Missing scheme (http:// or https://)
+- Missing scheme (http:// or https://) when using full URL format
+- Missing Host header when using path-only URL (e.g., `/api/users`)
 - Missing host in URL
 - Invalid URL format
 - Missing Host header for HTTP/1.1
