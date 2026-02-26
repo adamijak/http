@@ -51,22 +51,22 @@ func (r *HTTPRequest) Print(w io.Writer, colored bool) {
 // ToRawRequest converts the HTTPRequest to raw HTTP format for sending over TCP
 func (r *HTTPRequest) ToRawRequest() string {
 	var sb strings.Builder
-	
+
 	// Request line
 	sb.WriteString(fmt.Sprintf("%s %s %s\r\n", r.Method, r.URL, r.Version))
-	
+
 	// Headers
 	for key, value := range r.Headers {
 		sb.WriteString(fmt.Sprintf("%s: %s\r\n", key, value))
 	}
-	
+
 	// Empty line between headers and body
 	sb.WriteString("\r\n")
-	
+
 	// Body
 	if r.Body != "" {
 		sb.WriteString(r.Body)
 	}
-	
+
 	return sb.String()
 }

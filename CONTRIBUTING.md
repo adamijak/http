@@ -189,10 +189,19 @@ cat examples/with-shell-commands.http | ./http -dry-run
 4. Update README if user-facing
 
 ### After Changes
-1. Build: `go build -o http`
-2. Test with examples: `cat examples/*.http | ./http -dry-run`
-3. Test edge cases
-4. Update CONTRIBUTING.md if architecture changes
+1. Format code: `gofmt -w .`
+2. Lint code: `go vet ./...`
+3. Build: `go build -o http`
+4. Run test suite: `./test.sh`
+5. Test with examples: `cat examples/*.http | ./http -dry-run`
+6. Test edge cases
+7. Update CONTRIBUTING.md if architecture changes
+
+**Before Finishing a Pull Request:**
+- **ALWAYS** run `gofmt -w .` to format all Go files
+- **ALWAYS** run `go vet ./...` to check for potential issues
+- **ALWAYS** run `./test.sh` to ensure all tests pass
+- **ALWAYS** verify that all examples work correctly
 
 ## Code Style
 

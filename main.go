@@ -20,7 +20,7 @@ func main() {
 	noColor := flag.Bool("no-color", false, "Disable colored output")
 	verbose := flag.Bool("v", false, "Verbose output")
 	version := flag.Bool("version", false, "Show version information")
-	
+
 	flag.Parse()
 
 	// Show version
@@ -67,7 +67,7 @@ func main() {
 	if *verbose {
 		fmt.Println("\n--- Sending Request ---")
 	}
-	
+
 	resp, err := client.Send(req)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error sending request: %v\n", err)

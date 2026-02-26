@@ -7,6 +7,23 @@ set -e
 echo "=== HTTP Client Test Suite ==="
 echo ""
 
+# Check formatting
+echo "Checking code formatting..."
+UNFORMATTED=$(gofmt -l .)
+if [ -n "$UNFORMATTED" ]; then
+    echo "✗ Code is not formatted. Run 'gofmt -w .' to fix:"
+    echo "$UNFORMATTED"
+    exit 1
+fi
+echo "✓ Code formatting is correct"
+echo ""
+
+# Run linting
+echo "Running go vet..."
+go vet ./...
+echo "✓ Linting passed"
+echo ""
+
 # Build
 echo "Building..."
 go build -o http

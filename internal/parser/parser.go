@@ -11,7 +11,7 @@ import (
 )
 
 // Parse parses an .http file format and returns an HTTPRequest
-// 
+//
 // Supported features:
 // - Comments (lines starting with # or //)
 // - Environment variables: ${VAR_NAME} or $VAR_NAME
@@ -30,7 +30,7 @@ import (
 func Parse(content string) (*models.HTTPRequest, error) {
 	// Preprocess the content
 	processed := preprocess(content)
-	
+
 	// Parse the preprocessed content
 	return parseHTTP(processed)
 }
@@ -39,25 +39,25 @@ func Parse(content string) (*models.HTTPRequest, error) {
 func preprocess(content string) string {
 	scanner := bufio.NewScanner(strings.NewReader(content))
 	var lines []string
-	
+
 	for scanner.Scan() {
 		line := scanner.Text()
-		
+
 		// Skip comments (lines starting with # or //)
 		trimmed := strings.TrimSpace(line)
 		if strings.HasPrefix(trimmed, "#") || strings.HasPrefix(trimmed, "//") {
 			continue
 		}
-		
+
 		// Process environment variables: ${VAR} or $VAR
 		line = expandEnvVars(line)
-		
+
 		// Process shell commands: $(command)
 		line = executeShellCommands(line)
-		
+
 		lines = append(lines, line)
 	}
-	
+
 	return strings.Join(lines, "\n")
 }
 
@@ -74,19 +74,19 @@ func expandEnvVars(line string) string {
 			break
 		}
 		end += start
-		
+
 		varName := line[start+2 : end]
 		varValue := os.Getenv(varName)
 		line = line[:start] + varValue + line[end+1:]
 	}
-	
+
 	// Handle $VAR_NAME format (simple case)
 	// This is a simplified implementation that works for most cases
 	parts := strings.Split(line, "$")
 	if len(parts) > 1 {
 		var result strings.Builder
 		result.WriteString(parts[0])
-		
+
 		for i := 1; i < len(parts); i++ {
 			part := parts[i]
 			// Find the end of variable name (alphanumeric and underscore)
@@ -94,7 +94,7 @@ func expandEnvVars(line string) string {
 			for varEnd < len(part) && (isAlphaNum(part[varEnd]) || part[varEnd] == '_') {
 				varEnd++
 			}
-			
+
 			if varEnd > 0 {
 				varName := part[:varEnd]
 				varValue := os.Getenv(varName)
@@ -105,10 +105,10 @@ func expandEnvVars(line string) string {
 				result.WriteString(part)
 			}
 		}
-		
+
 		line = result.String()
 	}
-	
+
 	return line
 }
 
@@ -124,12 +124,12 @@ func executeShellCommands(line string) string {
 			break
 		}
 		end += start
-		
+
 		command := line[start+2 : end]
 		output := runCommand(command)
 		line = line[:start] + output + line[end+1:]
 	}
-	
+
 	return line
 }
 
@@ -146,12 +146,12 @@ func runCommand(command string) string {
 // parseHTTP parses the preprocessed HTTP request
 func parseHTTP(content string) (*models.HTTPRequest, error) {
 	req := models.NewHTTPRequest()
-	
+
 	lines := strings.Split(content, "\n")
 	if len(lines) == 0 {
 		return nil, fmt.Errorf("empty request")
 	}
-	
+
 	// Find the request line (first non-empty line)
 	requestLineIdx := -1
 	for i, line := range lines {
@@ -160,24 +160,24 @@ func parseHTTP(content string) (*models.HTTPRequest, error) {
 			break
 		}
 	}
-	
+
 	if requestLineIdx == -1 {
 		return nil, fmt.Errorf("no request line found")
 	}
-	
+
 	// Parse request line: METHOD URL [VERSION]
 	requestLine := strings.TrimSpace(lines[requestLineIdx])
 	parts := strings.Fields(requestLine)
 	if len(parts) < 2 {
 		return nil, fmt.Errorf("invalid request line (must contain at least METHOD and URL): %s", requestLine)
 	}
-	
+
 	req.Method = parts[0]
 	req.URL = parts[1]
 	if len(parts) >= 3 {
 		req.Version = parts[2]
 	}
-	
+
 	// Parse headers (lines until empty line or body)
 	i := requestLineIdx + 1
 	for i < len(lines) {
@@ -186,25 +186,25 @@ func parseHTTP(content string) (*models.HTTPRequest, error) {
 			i++
 			break
 		}
-		
+
 		// Parse header: Key: Value
 		colonIdx := strings.Index(line, ":")
 		if colonIdx == -1 {
 			return nil, fmt.Errorf("invalid header: %s", line)
 		}
-		
+
 		key := strings.TrimSpace(line[:colonIdx])
 		value := strings.TrimSpace(line[colonIdx+1:])
 		req.Headers[key] = value
 		i++
 	}
-	
+
 	// Parse body (rest of the content)
 	if i < len(lines) {
 		body := strings.Join(lines[i:], "\n")
 		req.Body = strings.TrimSpace(body)
 	}
-	
+
 	return req, nil
 }
 
