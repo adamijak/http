@@ -47,7 +47,7 @@ Content-Length: 15
 
 {"user": "john"}
 ```
-*(Note: In actual file, line endings would be \r\n)*
+*(Note: In the actual RFC compliant file, each line would end with `\r\n` (CRLF), not just `\n` (LF) as shown above. This is the key difference that enables format auto-detection.)*
 
 ### Format Comparison
 

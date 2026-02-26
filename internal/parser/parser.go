@@ -54,7 +54,9 @@ func Parse(content string) (*models.HTTPRequest, error) {
 
 // ParseRFCCompliant parses an RFC compliant HTTP request without preprocessing
 // This is used for loading saved requests that are already preprocessed
-// Deprecated: Use Parse() which auto-detects the format
+// Deprecated: Use Parse() which auto-detects the format based on line endings.
+// This function is kept for backward compatibility and will be removed in v2.0.
+// New code should use Parse() instead, which handles both HTP and RFC compliant formats.
 func ParseRFCCompliant(content string) (*models.HTTPRequest, error) {
 	// Parse directly without preprocessing
 	return parseHTTP(content)
