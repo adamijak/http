@@ -20,6 +20,7 @@ func main() {
 	noColor := flag.Bool("no-color", false, "Disable colored output")
 	verbose := flag.Bool("v", false, "Verbose output")
 	version := flag.Bool("version", false, "Show version information")
+	noSecure := flag.Bool("no-secure", false, "Send request in plain HTTP instead of HTTPS")
 
 	flag.Parse()
 
@@ -44,7 +45,7 @@ func main() {
 	}
 
 	// Validate the request
-	validationResult := validator.Validate(req)
+	validationResult := validator.Validate(req, *noSecure)
 	if !*noColor {
 		validationResult.PrintColored(os.Stdout)
 	} else {

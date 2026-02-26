@@ -78,7 +78,7 @@ func (v *ValidationResult) PrintColored(w io.Writer) {
 // - Valid HTTP version
 // - Required headers for certain methods
 // - Content-Length for requests with body
-func Validate(req *models.HTTPRequest) *ValidationResult {
+func Validate(req *models.HTTPRequest, noSecure bool) *ValidationResult {
 	result := &ValidationResult{
 		Errors:   []string{},
 		Warnings: []string{},
@@ -88,7 +88,7 @@ func Validate(req *models.HTTPRequest) *ValidationResult {
 	validateMethod(req, result)
 
 	// Validate URL
-	validateURL(req, result)
+	validateURL(req, result, noSecure)
 
 	// Validate HTTP version
 	validateVersion(req, result)
@@ -126,9 +126,31 @@ func validateMethod(req *models.HTTPRequest, result *ValidationResult) {
 }
 
 // validateURL checks if the URL is valid and has a scheme
-func validateURL(req *models.HTTPRequest, result *ValidationResult) {
+func validateURL(req *models.HTTPRequest, result *ValidationResult, noSecure bool) {
 	if req.URL == "" {
 		result.Errors = append(result.Errors, "URL is required")
+		return
+	}
+
+	// Check if URL starts with a path (e.g., /path or /path?query)
+	// If so, reconstruct full URL from Host header
+	if strings.HasPrefix(req.URL, "/") {
+		// URL is a path, need Host header to construct full URL
+		host, hasHost := req.Headers["Host"]
+		if !hasHost {
+			result.Errors = append(result.Errors,
+				"Host header is required when URL is a path (e.g., /path)")
+			return
+		}
+
+		// Determine scheme based on --no-secure flag
+		scheme := "https"
+		if noSecure {
+			scheme = "http"
+		}
+
+		// Reconstruct full URL
+		req.URL = fmt.Sprintf("%s://%s%s", scheme, host, req.URL)
 		return
 	}
 
@@ -142,8 +164,14 @@ func validateURL(req *models.HTTPRequest, result *ValidationResult) {
 	// Check if scheme is present
 	if parsedURL.Scheme == "" {
 		result.Errors = append(result.Errors,
-			"URL must include scheme (http:// or https://)")
+			"URL must include scheme (http:// or https://) or be a path starting with /")
 		return
+	}
+
+	// Apply --no-secure flag to force HTTP
+	if noSecure && parsedURL.Scheme == "https" {
+		parsedURL.Scheme = "http"
+		req.URL = parsedURL.String()
 	}
 
 	// Check if scheme is http or https
