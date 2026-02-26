@@ -409,7 +409,6 @@ X-Shell: $(echo hello)`
 	if req2.Headers["X-Shell"] != "$(echo hello)" {
 		t.Errorf("Expected no shell command execution in strict mode, got %s", req2.Headers["X-Shell"])
 	}
-	// Comments should still be removed even in strict mode? Actually, let me check what parseHTTP does...
-	// Looking at the code, in strict mode we go directly to parseHTTP which doesn't handle comments
-	// So comments would be treated as invalid lines
+	// Note: In strict mode, parseHTTP is called directly without preprocessing,
+	// so comments are NOT removed and would be treated as invalid request lines.
 }
