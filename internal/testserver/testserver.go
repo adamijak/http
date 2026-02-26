@@ -85,7 +85,7 @@ func NewWithConfig(config *HandlerConfig) (*TestServer, error) {
 		// Write response
 		w.WriteHeader(config.StatusCode)
 		if config.Body != "" {
-			w.Write([]byte(config.Body))
+			_, _ = w.Write([]byte(config.Body))
 		}
 	})
 
@@ -150,7 +150,7 @@ func NewTLSWithConfig(config *HandlerConfig) (*TestServer, error) {
 		// Write response
 		w.WriteHeader(config.StatusCode)
 		if config.Body != "" {
-			w.Write([]byte(config.Body))
+			_, _ = w.Write([]byte(config.Body))
 		}
 	})
 
