@@ -87,7 +87,7 @@ func Send(req *models.HTTPRequest) (*models.HTTPResponse, error) {
 	}
 
 	// Read response
-	return readResponse(conn)
+	return readResponse(conn, req.Method)
 }
 
 // buildRawRequest builds the raw HTTP request string
@@ -114,7 +114,7 @@ func buildRawRequest(req *models.HTTPRequest, path string) string {
 }
 
 // readResponse reads and parses the HTTP response
-func readResponse(conn net.Conn) (*models.HTTPResponse, error) {
+func readResponse(conn net.Conn, method string) (*models.HTTPResponse, error) {
 	resp := &models.HTTPResponse{
 		Headers: make(map[string]string),
 	}
@@ -164,6 +164,11 @@ func readResponse(conn net.Conn) (*models.HTTPResponse, error) {
 		key := strings.TrimSpace(line[:colonIdx])
 		value := strings.TrimSpace(line[colonIdx+1:])
 		resp.Headers[key] = value
+	}
+
+	// For HEAD requests, don't read the body even if Content-Length is present
+	if method == "HEAD" {
+		return resp, nil
 	}
 
 	// Read body

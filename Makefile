@@ -1,7 +1,7 @@
 # Makefile for HTTP Client Tool
 # AI Agent Note: Simple build automation
 
-.PHONY: build test clean install examples help format lint check
+.PHONY: build test unittest clean install examples help format lint check
 
 # Default target
 all: build
@@ -18,9 +18,15 @@ lint:
 	go vet ./...
 	@echo "Linting complete."
 
+# Run unit tests
+unittest:
+	@echo "Running unit tests..."
+	go test ./... -v
+	@echo "Unit tests passed."
+
 # Check formatting, linting, and tests
-check: format lint
-	@echo "Running test suite..."
+check: format lint unittest
+	@echo "Running integration test suite..."
 	./test.sh
 
 # Build the binary
@@ -36,7 +42,7 @@ build-all:
 	GOOS=darwin GOARCH=arm64 go build -o http-darwin-arm64
 	GOOS=windows GOARCH=amd64 go build -o http-windows-amd64.exe
 
-# Test with examples
+# Test with examples (integration tests)
 test: build
 	@echo "Testing simple GET request..."
 	@cat examples/simple-get.http | ./http -dry-run
@@ -80,8 +86,9 @@ help:
 	@echo "  make build-all  - Build for multiple platforms"
 	@echo "  make format     - Format all Go files with gofmt"
 	@echo "  make lint       - Lint code with go vet"
+	@echo "  make unittest   - Run unit tests"
+	@echo "  make test       - Run integration tests with example files"
 	@echo "  make check      - Format, lint, and run all tests"
-	@echo "  make test       - Run tests with example files"
 	@echo "  make examples   - Run all example requests"
 	@echo "  make install    - Install to /usr/local/bin"
 	@echo "  make clean      - Remove build artifacts"
