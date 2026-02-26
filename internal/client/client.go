@@ -63,7 +63,10 @@ func Send(req *models.HTTPRequest) (*models.HTTPResponse, error) {
 	defer conn.Close()
 
 	// Set timeout
-	conn.SetDeadline(time.Now().Add(30 * time.Second))
+	err = conn.SetDeadline(time.Now().Add(30 * time.Second))
+	if err != nil {
+		return nil, fmt.Errorf("failed to set deadline: %w", err)
+	}
 
 	// Prepare the request path
 	path := parsedURL.Path
@@ -228,7 +231,10 @@ func readChunkedBody(reader *bufio.Reader) (string, error) {
 		// Last chunk
 		if chunkSize == 0 {
 			// Read trailing CRLF
-			reader.ReadString('\n')
+			_, err = reader.ReadString('\n')
+			if err != nil {
+				return "", err
+			}
 			break
 		}
 
@@ -241,7 +247,10 @@ func readChunkedBody(reader *bufio.Reader) (string, error) {
 		sb.Write(chunk)
 
 		// Read trailing CRLF after chunk
-		reader.ReadString('\n')
+		_, err = reader.ReadString('\n')
+		if err != nil {
+			return "", err
+		}
 	}
 
 	return sb.String(), nil
