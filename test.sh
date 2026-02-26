@@ -110,4 +110,63 @@ echo "GET https://example.com/path HTTP/1.1" | ./http -dry-run -no-color 2>&1 | 
 echo "✓ Host header auto-added"
 echo ""
 
+# Test 12: Save request to file
+echo "Test 12: Save RFC compliant request to file"
+TEMP_FILE="/tmp/test-save-request-$$.http"
+cat examples/simple-get.http | ./http -save-request "$TEMP_FILE" > /dev/null 2>&1
+if [ -f "$TEMP_FILE" ]; then
+    echo "✓ Request saved to file"
+    rm -f "$TEMP_FILE"
+else
+    echo "✗ Failed to save request to file"
+    exit 1
+fi
+echo ""
+
+# Test 13: Load request from file
+echo "Test 13: Load RFC compliant request from file"
+TEMP_FILE="/tmp/test-load-request-$$.http"
+cat examples/simple-get.http | ./http -save-request "$TEMP_FILE" > /dev/null 2>&1
+./http -load-request "$TEMP_FILE" -dry-run > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+    echo "✓ Request loaded from file"
+    rm -f "$TEMP_FILE"
+else
+    echo "✗ Failed to load request from file"
+    rm -f "$TEMP_FILE"
+    exit 1
+fi
+echo ""
+
+# Test 14: Strict mode with warnings
+echo "Test 14: Strict mode fails on warnings"
+echo "POST https://example.com HTTP/1.1
+Host: example.com
+
+test body" | ./http -strict -dry-run 2>&1 | grep -q "Strict mode"
+if [ $? -eq 0 ]; then
+    echo "✓ Strict mode enforced"
+else
+    echo "✗ Strict mode not working"
+    exit 1
+fi
+echo ""
+
+# Test 15: Save preprocessed request with environment variables
+echo "Test 15: Save preprocessed request with environment variables"
+export TEST_VAR="test-value-123"
+TEMP_FILE="/tmp/test-env-save-$$.http"
+echo "GET https://example.com HTTP/1.1
+Host: example.com
+X-Test: \${TEST_VAR}" | ./http -save-request "$TEMP_FILE" > /dev/null 2>&1
+if grep -q "test-value-123" "$TEMP_FILE"; then
+    echo "✓ Environment variables preprocessed and saved"
+    rm -f "$TEMP_FILE"
+else
+    echo "✗ Environment variables not preprocessed in saved file"
+    rm -f "$TEMP_FILE"
+    exit 1
+fi
+echo ""
+
 echo "=== All tests passed! ==="

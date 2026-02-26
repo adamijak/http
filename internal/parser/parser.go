@@ -35,6 +35,13 @@ func Parse(content string) (*models.HTTPRequest, error) {
 	return parseHTTP(processed)
 }
 
+// ParseRFCCompliant parses an RFC compliant HTTP request without preprocessing
+// This is used for loading saved requests that are already preprocessed
+func ParseRFCCompliant(content string) (*models.HTTPRequest, error) {
+	// Parse directly without preprocessing
+	return parseHTTP(content)
+}
+
 // preprocess handles comments, environment variables, and shell commands
 func preprocess(content string) string {
 	scanner := bufio.NewScanner(strings.NewReader(content))

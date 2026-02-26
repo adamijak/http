@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/adamijak/http/internal/client"
+	"github.com/adamijak/http/internal/models"
 	"github.com/adamijak/http/internal/parser"
 	"github.com/adamijak/http/internal/validator"
 )
@@ -21,6 +22,9 @@ func main() {
 	verbose := flag.Bool("v", false, "Verbose output")
 	version := flag.Bool("version", false, "Show version information")
 	noSecure := flag.Bool("no-secure", false, "Send request in plain HTTP instead of HTTPS")
+	saveRequest := flag.String("save-request", "", "Save the preprocessed RFC compliant request to a file instead of sending")
+	loadRequest := flag.String("load-request", "", "Load an RFC compliant request from a file (bypasses preprocessing)")
+	strict := flag.Bool("strict", false, "Strict mode: fail on any validation warnings (RFC compliance enforcement)")
 
 	flag.Parse()
 
@@ -30,18 +34,36 @@ func main() {
 		return
 	}
 
-	// Read from stdin
-	input, err := io.ReadAll(os.Stdin)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
-		os.Exit(1)
-	}
+	var req *models.HTTPRequest
+	var err error
 
-	// Parse the .http file
-	req, err := parser.Parse(string(input))
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Parse error: %v\n", err)
-		os.Exit(1)
+	// Load request from file or stdin
+	if *loadRequest != "" {
+		// Load from file (RFC compliant format, no preprocessing)
+		content, err := os.ReadFile(*loadRequest)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error reading file: %v\n", err)
+			os.Exit(1)
+		}
+		req, err = parser.ParseRFCCompliant(string(content))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Parse error: %v\n", err)
+			os.Exit(1)
+		}
+	} else {
+		// Read from stdin
+		input, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Parse the .http file
+		req, err = parser.Parse(string(input))
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Parse error: %v\n", err)
+			os.Exit(1)
+		}
 	}
 
 	// Validate the request
@@ -55,6 +77,23 @@ func main() {
 	// Exit if there are errors
 	if validationResult.HasErrors() {
 		os.Exit(1)
+	}
+
+	// In strict mode, fail on warnings too
+	if *strict && validationResult.HasWarnings() {
+		fmt.Fprintf(os.Stderr, "\nStrict mode: Request has validation warnings and cannot be sent\n")
+		os.Exit(1)
+	}
+
+	// Save request to file if requested
+	if *saveRequest != "" {
+		err := req.SaveToFile(*saveRequest)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error saving request: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("\n✓ RFC compliant request saved to: %s\n", *saveRequest)
+		return
 	}
 
 	// If dry-run, just show the preprocessed request

@@ -14,6 +14,8 @@ A command-line HTTP client written in Go that processes `.http` files, validates
   - Comments (# or //)
   - Environment variable substitution (${VAR} or $VAR)
   - Shell command execution $(command)
+- 💾 **Save/Load Requests**: Save preprocessed RFC compliant requests to files and load them later
+- 🔒 **Strict Mode**: Enforce full RFC compliance by failing on validation warnings
 - 🎨 **Colored Output**: Beautiful colored output for requests, responses, and validation
 - 📥 **stdin/stdout**: Reads from stdin and writes to stdout for easy piping
 - 👁️ **Dry Run Mode**: Preview preprocessed and validated requests without sending
@@ -64,10 +66,14 @@ EOF
 ./http [OPTIONS]
 
 Options:
-  -dry-run       Show preprocessed and validated request without sending
-  -no-color      Disable colored output
-  -no-secure     Send request in plain HTTP instead of HTTPS
-  -v             Verbose output
+  -dry-run            Show preprocessed and validated request without sending
+  -no-color           Disable colored output
+  -no-secure          Send request in plain HTTP instead of HTTPS
+  -save-request FILE  Save the preprocessed RFC compliant request to FILE instead of sending
+  -load-request FILE  Load an RFC compliant request from FILE (bypasses preprocessing)
+  -strict             Strict mode: fail on any validation warnings (RFC compliance enforcement)
+  -v                  Verbose output
+  -version            Show version information
 ```
 
 ### .http File Format
@@ -186,6 +192,68 @@ Authorization: Bearer abc123token
 X-Request-ID: 550e8400-e29b-41d4-a716-446655440000
 ...
 ```
+
+### Save Preprocessed RFC Compliant Request
+
+Save the preprocessed request to a file for later use or inspection:
+
+```bash
+# Save request after preprocessing (env vars substituted, comments removed)
+cat request.http | ./http -save-request saved-request.http
+```
+
+Output:
+```
+✓ Validation passed
+✓ RFC compliant request saved to: saved-request.http
+```
+
+The saved file contains the RFC compliant HTTP request with:
+- Environment variables substituted
+- Shell commands executed
+- Comments removed
+- Proper \r\n line endings
+- All validations passed
+
+### Load and Send Saved Request
+
+Load a previously saved RFC compliant request and send it:
+
+```bash
+# Load and send (bypasses preprocessing)
+./http -load-request saved-request.http
+
+# Load and preview (dry-run)
+./http -load-request saved-request.http -dry-run
+```
+
+This is useful for:
+- Storing templates of API requests
+- Sharing exact requests between team members
+- Debugging by saving intermediate states
+- Version controlling request templates
+
+### Strict RFC Compliance Mode
+
+Use strict mode to enforce full RFC compliance (fails on warnings):
+
+```bash
+# This will fail if request has any validation warnings
+cat request.http | ./http -strict
+```
+
+Example output:
+```
+Validation Warnings:
+  [WARN] Content-Type header is recommended when sending a body
+
+Strict mode: Request has validation warnings and cannot be sent
+```
+
+Strict mode is useful for:
+- Ensuring production requests are fully RFC compliant
+- CI/CD pipelines where warnings should be treated as errors
+- Testing request templates for compliance
 
 ### Send Request with Validation
 
