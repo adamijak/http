@@ -282,7 +282,7 @@ cat template.http | ./http --no-send
 # Save to file using shell redirection
 ./http -f template.http --no-send > saved-request.http
 
-# Or pipe to other tools
+# Or pipe to other tools (use -a to handle CRLF line endings)
 ./http -f template.http --no-send | grep -a "Authorization"
 ```
 

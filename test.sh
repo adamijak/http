@@ -119,7 +119,8 @@ echo ""
 # Test 12: Output RFC compliant request to stdout
 echo "Test 12: Output RFC compliant request to stdout"
 OUTPUT=$(./http --no-send < examples/simple-get.http 2>&1)
-if echo "$OUTPUT" | grep -q $'\r'; then
+# Check for CRLF using od to ensure it works across all shells
+if echo "$OUTPUT" | od -An -tx1 | grep -q "0d 0a"; then
     echo "✓ RFC compliant request output to stdout"
 else
     echo "✗ Failed to output RFC compliant request"
