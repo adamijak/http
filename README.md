@@ -76,7 +76,8 @@ Content-Length: 15
 - 🔒 **Strict Mode**: Enforce full RFC compliance by failing on validation warnings
 - 🎨 **Colored Output**: Beautiful colored output for requests, responses, and validation
 - 📥 **stdin/stdout**: Reads from stdin and writes to stdout for easy piping
-- 👁️ **Dry Run Mode**: Preview preprocessed and validated requests without sending
+- 🔍 **RFC Output Mode**: Output RFC compliant requests without sending for inspection or saving
+- ⚙️ **Port Override**: Explicitly set port with `--port` flag, overriding URL defaults
 
 ## Installation
 
@@ -127,14 +128,14 @@ EOF
 ./http [OPTIONS]
 
 Options:
-  -f FILE             Read request from FILE (auto-detects HTP or RFC compliant format)
+  -f, --file FILE     Read request from FILE (auto-detects HTP or RFC compliant format)
   --no-send           Output the RFC compliant request to stdout without sending
-  -dry-run            Show preprocessed and validated request without sending
-  -no-color           Disable colored output
-  -no-secure          Send request in plain HTTP instead of HTTPS
-  -strict             Strict mode: fail on any validation warnings (RFC compliance enforcement)
-  -v                  Verbose output
-  -version            Show version information
+  --no-color          Disable colored output
+  --no-secure         Send request in plain HTTP instead of HTTPS
+  --port PORT         Explicitly set the port (overrides URL and default ports)
+  --strict            Strict mode: fail on any validation warnings (RFC compliance enforcement)
+  -v, --verbose       Verbose output
+  --version           Show version information
 ```
 
 ### HTP Format (HTTP Template Protocol)
@@ -159,10 +160,20 @@ Host: api.example.com
 User-Agent: MyClient/1.0
 ```
 
-By default, this will use HTTPS. To force plain HTTP, use the `--no-secure` flag:
+**Scheme Detection**: By default, path-only requests use HTTPS. To force plain HTTP, use the `--no-secure` flag:
 
 ```bash
 cat request.http | ./http --no-secure
+```
+
+**Port Detection**: The tool automatically uses the default port for the detected scheme:
+- HTTPS: port 443 (default)
+- HTTP: port 80 (default)
+
+You can override the port explicitly with the `--port` flag:
+
+```bash
+cat request.http | ./http --port 8080
 ```
 
 #### POST Request with Body
@@ -237,24 +248,27 @@ User-Agent: http-client/1.0
 
 ## Examples
 
-### Check Request Before Sending
+### Output RFC Compliant Request
+
+Output the RFC compliant request to stdout without sending:
 
 ```bash
-cat request.http | ./http -dry-run
+cat request.http | ./http --no-send
 ```
 
 Output:
 ```
-✓ Validation passed
-
---- Preprocessed Request ---
-POST https://api.example.com/data HTTP/1.1
+GET https://api.example.com/data HTTP/1.1
 Host: api.example.com
 Content-Type: application/json
 Authorization: Bearer abc123token
 X-Request-ID: 550e8400-e29b-41d4-a716-446655440000
-...
+Content-Length: 42
+
+{"message":"Hello from http client"}
 ```
+
+The output is in **RFC compliant format** with CRLF line endings (`\r\n`), ready to send over the wire or save to a file.
 
 ### Working with Both Formats
 
@@ -301,15 +315,25 @@ Load requests from file in either format:
 ```bash
 # Load HTP format (will preprocess)
 ./http -f template.http
+# or using long form
+./http --file template.http
 
 # Load RFC compliant format (no preprocessing)
 ./http -f saved-request.http
 
-# Preview before sending
-./http -f request.http -dry-run
+# Preview RFC compliant request without sending
+./http -f request.http --no-send
 
 # Send with strict validation
-./http -f request.http -strict
+./http -f request.http --strict
+
+# Override port explicitly
+./http -f request.http --port 8080
+
+# Use verbose output
+./http -f request.http --verbose
+# or shorthand
+./http -f request.http -v
 ```
 
 **Format Detection**: The tool automatically detects the format:
