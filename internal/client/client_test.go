@@ -34,7 +34,7 @@ func TestSendHTTP(t *testing.T) {
 	}
 
 	// Send request
-	resp, err := Send(req)
+	resp, err := Send(req, 0)
 	if err != nil {
 		t.Fatalf("Failed to send request: %v", err)
 	}
@@ -98,7 +98,7 @@ func TestSendHTTPS(t *testing.T) {
 	// We need to temporarily allow insecure connections for testing
 	// This is a limitation of the current implementation
 	// For now, let's test that the client attempts the connection
-	_, err = Send(req)
+	_, err = Send(req, 0)
 
 	// We expect an error due to certificate verification
 	// This is actually correct behavior for production
@@ -145,7 +145,7 @@ func TestSendPOSTWithBody(t *testing.T) {
 	}
 
 	// Send request
-	resp, err := Send(req)
+	resp, err := Send(req, 0)
 	if err != nil {
 		t.Fatalf("Failed to send request: %v", err)
 	}
@@ -189,7 +189,7 @@ func TestSendWithCustomHeaders(t *testing.T) {
 	}
 
 	// Send request
-	_, err = Send(req)
+	_, err = Send(req, 0)
 	if err != nil {
 		t.Fatalf("Failed to send request: %v", err)
 	}
@@ -229,7 +229,7 @@ func TestSendWithQueryParams(t *testing.T) {
 	}
 
 	// Send request
-	_, err = Send(req)
+	_, err = Send(req, 0)
 	if err != nil {
 		t.Fatalf("Failed to send request: %v", err)
 	}
@@ -270,7 +270,7 @@ func TestSendMultipleMethods(t *testing.T) {
 			}
 
 			// Send request
-			_, err = Send(req)
+			_, err = Send(req, 0)
 			if err != nil {
 				t.Fatalf("Failed to send %s request: %v", method, err)
 			}
@@ -297,7 +297,7 @@ func TestSendInvalidURL(t *testing.T) {
 		Headers: map[string]string{},
 	}
 
-	_, err := Send(req)
+	_, err := Send(req, 0)
 	if err == nil {
 		t.Error("Expected error for invalid URL")
 	}
@@ -314,7 +314,7 @@ func TestSendConnectionRefused(t *testing.T) {
 		},
 	}
 
-	_, err := Send(req)
+	_, err := Send(req, 0)
 	if err == nil {
 		t.Error("Expected error for connection refused")
 	}
