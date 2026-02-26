@@ -68,7 +68,8 @@ func main() {
 	}
 
 	// Parse the request (auto-detects HTP or RFC compliant format)
-	req, err = parser.Parse(string(input))
+	// In strict mode, preprocessing is disabled
+	req, err = parser.Parse(string(input), strict)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Parse error: %v\n", err)
 		os.Exit(1)
@@ -105,11 +106,11 @@ func main() {
 		return
 	}
 
-	// For normal mode, show validation results
+	// For normal mode, show validation results to stderr
 	if !noColor {
-		validationResult.PrintColored(os.Stdout)
+		validationResult.PrintColored(os.Stderr)
 	} else {
-		validationResult.Print(os.Stdout)
+		validationResult.Print(os.Stderr)
 	}
 
 	// Exit if there are errors

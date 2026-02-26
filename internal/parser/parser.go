@@ -28,6 +28,8 @@ import (
 // - If content contains \r\n, treats as RFC compliant (no preprocessing)
 // - Otherwise, treats as HTP format (with preprocessing)
 //
+// The strictMode parameter disables preprocessing, requiring RFC compliant format.
+//
 // Example HTP file:
 // # This is a comment
 // GET https://api.example.com/users HTTP/1.1
@@ -37,7 +39,12 @@ import (
 //
 // AI Agent Note: This parser is designed to be simple and extensible.
 // Each preprocessing step is clearly separated for easy modification.
-func Parse(content string) (*models.HTTPRequest, error) {
+func Parse(content string, strictMode bool) (*models.HTTPRequest, error) {
+	// In strict mode, no preprocessing is allowed
+	if strictMode {
+		return parseHTTP(content)
+	}
+
 	// Auto-detect format based on line endings
 	// RFC compliant format uses \r\n, HTP format uses \n
 	if strings.Contains(content, "\r\n") {
