@@ -22,7 +22,7 @@ func main() {
 	verbose := flag.Bool("v", false, "Verbose output")
 	version := flag.Bool("version", false, "Show version information")
 	noSecure := flag.Bool("no-secure", false, "Send request in plain HTTP instead of HTTPS")
-	saveRequest := flag.String("save-request", "", "Save the preprocessed RFC compliant request to a file instead of sending")
+	noSend := flag.Bool("no-send", false, "Output the RFC compliant request to stdout without sending")
 	inputFile := flag.String("f", "", "Read request from file (supports both HTP and RFC compliant formats)")
 	strict := flag.Bool("strict", false, "Strict mode: fail on any validation warnings (RFC compliance enforcement)")
 
@@ -62,6 +62,36 @@ func main() {
 
 	// Validate the request
 	validationResult := validator.Validate(req, *noSecure)
+
+	// Output RFC compliant request to stdout if requested (skip validation output)
+	if *noSend {
+		// In strict mode, still fail on warnings
+		if *strict && validationResult.HasWarnings() {
+			// Show validation in this case
+			if !*noColor {
+				validationResult.PrintColored(os.Stderr)
+			} else {
+				validationResult.Print(os.Stderr)
+			}
+			fmt.Fprintf(os.Stderr, "\nStrict mode: Request has validation warnings and cannot be output\n")
+			os.Exit(1)
+		}
+		// Exit if there are errors
+		if validationResult.HasErrors() {
+			// Show validation errors
+			if !*noColor {
+				validationResult.PrintColored(os.Stderr)
+			} else {
+				validationResult.Print(os.Stderr)
+			}
+			os.Exit(1)
+		}
+		// Output raw request to stdout (no validation messages)
+		fmt.Print(req.ToRawRequest())
+		return
+	}
+
+	// For normal mode, show validation results
 	if !*noColor {
 		validationResult.PrintColored(os.Stdout)
 	} else {
@@ -77,17 +107,6 @@ func main() {
 	if *strict && validationResult.HasWarnings() {
 		fmt.Fprintf(os.Stderr, "\nStrict mode: Request has validation warnings and cannot be sent\n")
 		os.Exit(1)
-	}
-
-	// Save request to file if requested
-	if *saveRequest != "" {
-		err := req.SaveToFile(*saveRequest)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error saving request: %v\n", err)
-			os.Exit(1)
-		}
-		fmt.Printf("\n✓ RFC compliant request saved to: %s\n", *saveRequest)
-		return
 	}
 
 	// If dry-run, just show the preprocessed request

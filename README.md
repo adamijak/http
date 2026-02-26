@@ -128,10 +128,10 @@ EOF
 
 Options:
   -f FILE             Read request from FILE (auto-detects HTP or RFC compliant format)
+  --no-send           Output the RFC compliant request to stdout without sending
   -dry-run            Show preprocessed and validated request without sending
   -no-color           Disable colored output
   -no-secure          Send request in plain HTTP instead of HTTPS
-  -save-request FILE  Save the preprocessed RFC compliant request to FILE instead of sending
   -strict             Strict mode: fail on any validation warnings (RFC compliance enforcement)
   -v                  Verbose output
   -version            Show version information
@@ -271,25 +271,22 @@ The tool automatically detects whether your input is in HTP or RFC compliant for
 cat request.http | ./http
 ```
 
-### Save Preprocessed RFC Compliant Request
+### Output RFC Compliant Request
 
-Convert HTP format to RFC compliant format and save for reuse:
+Convert HTP format to RFC compliant format and output to stdout:
 
 ```bash
-# Save HTP request as RFC compliant (env vars substituted, comments removed)
-cat template.http | ./http -save-request saved-request.http
+# Output RFC compliant request (env vars substituted, comments removed)
+cat template.http | ./http --no-send
 
-# Or from file
-./http -f template.http -save-request saved-request.http
+# Save to file using shell redirection
+./http -f template.http --no-send > saved-request.http
+
+# Or pipe to other tools
+./http -f template.http --no-send | grep -a "Authorization"
 ```
 
-Output:
-```
-✓ Validation passed
-✓ RFC compliant request saved to: saved-request.http
-```
-
-The saved file is in **RFC compliant format** with:
+The output is in **RFC compliant format** with:
 - Environment variables substituted
 - Shell commands executed
 - Comments removed
@@ -320,10 +317,11 @@ Load requests from file in either format:
 - **RFC compliant**: Contains CRLF (`\r\n`) - used as-is
 
 This is useful for:
-- Storing request templates with dynamic content (HTP format)
-- Sharing exact requests between team members (RFC compliant)
-- Debugging by saving intermediate states
+- Writing request templates with dynamic content (HTP format)
+- Converting templates to production-ready requests (RFC compliant)
+- Sharing exact requests between team members
 - Version controlling request templates (both formats)
+- Piping requests to other tools for analysis
 
 ### Strict RFC Compliance Mode
 
@@ -332,6 +330,9 @@ Use strict mode to enforce full RFC compliance (fails on warnings):
 ```bash
 # This will fail if request has any validation warnings
 cat request.http | ./http -strict
+
+# Combine with --no-send for validation-only mode
+cat request.http | ./http --no-send -strict > validated.http
 ```
 
 Example output:
