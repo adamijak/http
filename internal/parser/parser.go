@@ -10,15 +10,25 @@ import (
 	"github.com/adamijak/http/internal/models"
 )
 
-// Parse parses an .http file format and returns an HTTPRequest
+// Parse parses an HTTP request in either HTP (HTTP Template Protocol) format
+// or RFC compliant format and returns an HTTPRequest
 //
-// Supported features:
+// HTP Format (HTTP Template Protocol) - our friendly format with preprocessing:
 // - Comments (lines starting with # or //)
 // - Environment variables: ${VAR_NAME} or $VAR_NAME
 // - Shell command execution: $(command)
-// - Standard HTTP request format
+// - Uses standard newlines (\n)
 //
-// Example .http file:
+// RFC Compliant Format - standard HTTP format:
+// - No preprocessing directives
+// - Uses CRLF line endings (\r\n)
+// - Ready to send over the wire
+//
+// The parser automatically detects the format:
+// - If content contains \r\n, treats as RFC compliant (no preprocessing)
+// - Otherwise, treats as HTP format (with preprocessing)
+//
+// Example HTP file:
 // # This is a comment
 // GET https://api.example.com/users HTTP/1.1
 // Host: api.example.com
@@ -28,11 +38,28 @@ import (
 // AI Agent Note: This parser is designed to be simple and extensible.
 // Each preprocessing step is clearly separated for easy modification.
 func Parse(content string) (*models.HTTPRequest, error) {
-	// Preprocess the content
+	// Auto-detect format based on line endings
+	// RFC compliant format uses \r\n, HTP format uses \n
+	if strings.Contains(content, "\r\n") {
+		// RFC compliant format - no preprocessing
+		return parseHTTP(content)
+	}
+
+	// HTP format - preprocess the content
 	processed := preprocess(content)
 
 	// Parse the preprocessed content
 	return parseHTTP(processed)
+}
+
+// ParseRFCCompliant parses an RFC compliant HTTP request without preprocessing
+// This is used for loading saved requests that are already preprocessed
+// Deprecated: Use Parse() which auto-detects the format based on line endings.
+// This function is kept for backward compatibility and will be removed in v2.0.
+// New code should use Parse() instead, which handles both HTP and RFC compliant formats.
+func ParseRFCCompliant(content string) (*models.HTTPRequest, error) {
+	// Parse directly without preprocessing
+	return parseHTTP(content)
 }
 
 // preprocess handles comments, environment variables, and shell commands

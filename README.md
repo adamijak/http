@@ -5,15 +5,75 @@
 
 A command-line HTTP client written in Go that processes `.http` files, validates requests against HTTP standards, and sends them over TCP with colored output.
 
+## File Formats
+
+This tool supports two HTTP request formats and **automatically detects** which one you're using:
+
+### HTP Format (HTTP Template Protocol)
+
+Our friendly, human-readable format with preprocessing support:
+- **Comments**: Lines starting with `#` or `//`
+- **Environment variables**: `${VAR_NAME}` or `$VAR_NAME`
+- **Shell commands**: `$(command)`
+- **Line endings**: Standard newlines (`\n`)
+- **Detection**: Automatically used when file doesn't contain `\r\n`
+- **Use case**: Writing request templates with dynamic content
+
+**Example HTP file:**
+```http
+# API Request Template
+POST https://api.example.com/data HTTP/1.1
+Host: api.example.com
+Authorization: Bearer ${API_TOKEN}
+X-Request-ID: $(uuidgen)
+
+{"user": "$(whoami)"}
+```
+*(Note: HTP format files use standard `\n` (LF) line endings, allowing text editors to easily edit them.)*
+
+### RFC Compliant Format
+
+Standard HTTP protocol format ready to send over the wire:
+- **No preprocessing**: Pure HTTP request format
+- **Line endings**: CRLF (`\r\n`) as per RFC specification
+- **Detection**: Automatically used when file contains `\r\n`
+- **Use case**: Saved/exported requests, sharing exact requests, production templates
+
+**Example RFC compliant file:**
+```http
+POST https://api.example.com/data HTTP/1.1
+Host: api.example.com
+Authorization: Bearer abc123token
+Content-Length: 15
+
+{"user": "john"}
+```
+*(Note: In the actual RFC compliant file, each line would end with `\r\n` (CRLF), not just `\n` (LF) as shown above. This is the key difference that enables format auto-detection.)*
+
+### Format Comparison
+
+| Feature | HTP Format | RFC Compliant Format |
+|---------|-----------|---------------------|
+| Line endings | `\n` | `\r\n` |
+| Comments | Yes (`#`, `//`) | No |
+| Env variables | Yes (`${VAR}`, `$VAR`) | No |
+| Shell commands | Yes (`$(cmd)`) | No |
+| Preprocessing | Yes | No |
+| Auto-detection | No `\r\n` in file | Contains `\r\n` |
+| Use with `-f` | ✅ Yes | ✅ Yes |
+| Use with stdin | ✅ Yes | ✅ Yes |
+
 ## Features
 
 - 🚀 **HTTP & HTTPS Support**: Send requests over plain HTTP or secure HTTPS
 - ✅ **Request Validation**: Validates requests against HTTP RFC standards with colored error/warning output
-- 📝 **.http File Format**: Human-readable request format with preprocessing support
+- 📝 **Dual Format Support**: HTP format (human-friendly with preprocessing) and RFC compliant format
 - 🔧 **Preprocessing**: 
   - Comments (# or //)
   - Environment variable substitution (${VAR} or $VAR)
   - Shell command execution $(command)
+- 💾 **Save/Load Requests**: Save preprocessed RFC compliant requests to files and load them later
+- 🔒 **Strict Mode**: Enforce full RFC compliance by failing on validation warnings
 - 🎨 **Colored Output**: Beautiful colored output for requests, responses, and validation
 - 📥 **stdin/stdout**: Reads from stdin and writes to stdout for easy piping
 - 👁️ **Dry Run Mode**: Preview preprocessed and validated requests without sending
@@ -48,8 +108,11 @@ go install github.com/adamijak/http@latest
 ### Basic Usage
 
 ```bash
-# From file
+# From stdin
 cat request.http | ./http
+
+# From file (supports both HTP and RFC compliant formats)
+./http -f request.http
 
 # From heredoc
 ./http <<EOF
@@ -64,13 +127,19 @@ EOF
 ./http [OPTIONS]
 
 Options:
-  -dry-run       Show preprocessed and validated request without sending
-  -no-color      Disable colored output
-  -no-secure     Send request in plain HTTP instead of HTTPS
-  -v             Verbose output
+  -f FILE             Read request from FILE (auto-detects HTP or RFC compliant format)
+  --no-send           Output the RFC compliant request to stdout without sending
+  -dry-run            Show preprocessed and validated request without sending
+  -no-color           Disable colored output
+  -no-secure          Send request in plain HTTP instead of HTTPS
+  -strict             Strict mode: fail on any validation warnings (RFC compliance enforcement)
+  -v                  Verbose output
+  -version            Show version information
 ```
 
-### .http File Format
+### HTP Format (HTTP Template Protocol)
+
+HTP is our friendly, human-readable request format with preprocessing support. Files in this format use standard newlines (`\n`) and can contain:
 
 #### Simple GET Request
 
@@ -186,6 +255,98 @@ Authorization: Bearer abc123token
 X-Request-ID: 550e8400-e29b-41d4-a716-446655440000
 ...
 ```
+
+### Working with Both Formats
+
+The tool automatically detects whether your input is in HTP or RFC compliant format:
+
+```bash
+# Read HTP format from file (will preprocess)
+./http -f template.http
+
+# Read RFC compliant format from file (no preprocessing needed)
+./http -f saved-request.http
+
+# Read from stdin (supports both formats)
+cat request.http | ./http
+```
+
+### Output RFC Compliant Request
+
+Convert HTP format to RFC compliant format and output to stdout:
+
+```bash
+# Output RFC compliant request (env vars substituted, comments removed)
+cat template.http | ./http --no-send
+
+# Save to file using shell redirection
+./http -f template.http --no-send > saved-request.http
+
+# Or pipe to other tools (use -a to handle CRLF line endings)
+./http -f template.http --no-send | grep -a "Authorization"
+```
+
+The output is in **RFC compliant format** with:
+- Environment variables substituted
+- Shell commands executed
+- Comments removed
+- Proper CRLF (`\r\n`) line endings
+- Auto-added headers (Content-Length, Host)
+- Ready to send over the wire
+
+### Load and Send Any Format
+
+Load requests from file in either format:
+
+```bash
+# Load HTP format (will preprocess)
+./http -f template.http
+
+# Load RFC compliant format (no preprocessing)
+./http -f saved-request.http
+
+# Preview before sending
+./http -f request.http -dry-run
+
+# Send with strict validation
+./http -f request.http -strict
+```
+
+**Format Detection**: The tool automatically detects the format:
+- **HTP format**: Contains standard newlines (`\n`) - will preprocess
+- **RFC compliant**: Contains CRLF (`\r\n`) - used as-is
+
+This is useful for:
+- Writing request templates with dynamic content (HTP format)
+- Converting templates to production-ready requests (RFC compliant)
+- Sharing exact requests between team members
+- Version controlling request templates (both formats)
+- Piping requests to other tools for analysis
+
+### Strict RFC Compliance Mode
+
+Use strict mode to enforce full RFC compliance (fails on warnings):
+
+```bash
+# This will fail if request has any validation warnings
+cat request.http | ./http -strict
+
+# Combine with --no-send for validation-only mode
+cat request.http | ./http --no-send -strict > validated.http
+```
+
+Example output:
+```
+Validation Warnings:
+  [WARN] Content-Type header is recommended when sending a body
+
+Strict mode: Request has validation warnings and cannot be sent
+```
+
+Strict mode is useful for:
+- Ensuring production requests are fully RFC compliant
+- CI/CD pipelines where warnings should be treated as errors
+- Testing request templates for compliance
 
 ### Send Request with Validation
 

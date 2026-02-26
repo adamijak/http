@@ -25,6 +25,16 @@ func (v *ValidationResult) HasErrors() bool {
 	return len(v.Errors) > 0
 }
 
+// HasWarnings returns true if there are any warnings
+func (v *ValidationResult) HasWarnings() bool {
+	return len(v.Warnings) > 0
+}
+
+// HasIssues returns true if there are any errors or warnings
+func (v *ValidationResult) HasIssues() bool {
+	return v.HasErrors() || v.HasWarnings()
+}
+
 // Print outputs validation results without colors
 func (v *ValidationResult) Print(w io.Writer) {
 	if len(v.Errors) > 0 {

@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"io"
+	"os"
 	"strings"
 )
 
@@ -69,4 +70,21 @@ func (r *HTTPRequest) ToRawRequest() string {
 	}
 
 	return sb.String()
+}
+
+// SaveToFile saves the RFC compliant HTTP request to a file
+func (r *HTTPRequest) SaveToFile(filename string) error {
+	content := r.ToRawRequest()
+	file, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(content)
+	if err != nil {
+		return fmt.Errorf("failed to write to file: %w", err)
+	}
+
+	return nil
 }

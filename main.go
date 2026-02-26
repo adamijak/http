@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/adamijak/http/internal/client"
+	"github.com/adamijak/http/internal/models"
 	"github.com/adamijak/http/internal/parser"
 	"github.com/adamijak/http/internal/validator"
 )
@@ -21,6 +22,9 @@ func main() {
 	verbose := flag.Bool("v", false, "Verbose output")
 	version := flag.Bool("version", false, "Show version information")
 	noSecure := flag.Bool("no-secure", false, "Send request in plain HTTP instead of HTTPS")
+	noSend := flag.Bool("no-send", false, "Output the RFC compliant request to stdout without sending")
+	inputFile := flag.String("f", "", "Read request from file (supports both HTP and RFC compliant formats)")
+	strict := flag.Bool("strict", false, "Strict mode: fail on any validation warnings (RFC compliance enforcement)")
 
 	flag.Parse()
 
@@ -30,15 +34,27 @@ func main() {
 		return
 	}
 
-	// Read from stdin
-	input, err := io.ReadAll(os.Stdin)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
-		os.Exit(1)
+	var req *models.HTTPRequest
+	var err error
+	var input []byte
+
+	// Read from file or stdin
+	if *inputFile != "" {
+		input, err = os.ReadFile(*inputFile)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error reading file: %v\n", err)
+			os.Exit(1)
+		}
+	} else {
+		input, err = io.ReadAll(os.Stdin)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
+			os.Exit(1)
+		}
 	}
 
-	// Parse the .http file
-	req, err := parser.Parse(string(input))
+	// Parse the request (auto-detects HTP or RFC compliant format)
+	req, err = parser.Parse(string(input))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Parse error: %v\n", err)
 		os.Exit(1)
@@ -46,6 +62,36 @@ func main() {
 
 	// Validate the request
 	validationResult := validator.Validate(req, *noSecure)
+
+	// Output RFC compliant request to stdout if requested (skip validation output)
+	if *noSend {
+		// In strict mode, still fail on warnings
+		if *strict && validationResult.HasWarnings() {
+			// Show validation in this case
+			if !*noColor {
+				validationResult.PrintColored(os.Stderr)
+			} else {
+				validationResult.Print(os.Stderr)
+			}
+			fmt.Fprintf(os.Stderr, "\nStrict mode: Request has validation warnings and cannot be output\n")
+			os.Exit(1)
+		}
+		// Exit if there are errors
+		if validationResult.HasErrors() {
+			// Show validation errors
+			if !*noColor {
+				validationResult.PrintColored(os.Stderr)
+			} else {
+				validationResult.Print(os.Stderr)
+			}
+			os.Exit(1)
+		}
+		// Output raw request to stdout (no validation messages)
+		fmt.Print(req.ToRawRequest())
+		return
+	}
+
+	// For normal mode, show validation results
 	if !*noColor {
 		validationResult.PrintColored(os.Stdout)
 	} else {
@@ -54,6 +100,12 @@ func main() {
 
 	// Exit if there are errors
 	if validationResult.HasErrors() {
+		os.Exit(1)
+	}
+
+	// In strict mode, fail on warnings too
+	if *strict && validationResult.HasWarnings() {
+		fmt.Fprintf(os.Stderr, "\nStrict mode: Request has validation warnings and cannot be sent\n")
 		os.Exit(1)
 	}
 

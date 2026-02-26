@@ -116,4 +116,80 @@ echo "GET https://example.com/path HTTP/1.1" | ./http -dry-run -no-color 2>&1 | 
 echo "✓ Host header auto-added"
 echo ""
 
+# Test 12: Output RFC compliant request to stdout
+echo "Test 12: Output RFC compliant request to stdout"
+OUTPUT=$(./http --no-send < examples/simple-get.http 2>&1)
+# Check for CRLF using od to ensure it works across all shells
+if echo "$OUTPUT" | od -An -tx1 | grep -q "0d 0a"; then
+    echo "✓ RFC compliant request output to stdout"
+else
+    echo "✗ Failed to output RFC compliant request"
+    exit 1
+fi
+echo ""
+
+# Test 13: Load request from file (with -f flag)
+echo "Test 13: Load RFC compliant request from file"
+TEMP_FILE="/tmp/test-load-request-$$.http"
+./http --no-send < examples/simple-get.http > "$TEMP_FILE" 2>&1
+./http -f "$TEMP_FILE" -dry-run > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+    echo "✓ Request loaded from file"
+    rm -f "$TEMP_FILE"
+else
+    echo "✗ Failed to load request from file"
+    rm -f "$TEMP_FILE"
+    exit 1
+fi
+echo ""
+
+# Test 14: Strict mode with warnings
+echo "Test 14: Strict mode fails on warnings"
+echo "POST https://example.com HTTP/1.1
+Host: example.com
+
+test body" | ./http -strict -dry-run 2>&1 | grep -q "Strict mode" || { echo "✗ Strict mode not working"; exit 1; }
+# Also verify the command itself failed (exit code 1)
+echo "POST https://example.com HTTP/1.1
+Host: example.com
+
+test body" | ./http -strict -dry-run > /dev/null 2>&1 && { echo "✗ Strict mode didn't fail the command"; exit 1; }
+echo "✓ Strict mode enforced"
+echo ""
+
+# Test 15: Output preprocessed request with environment variables
+echo "Test 15: Output preprocessed request with environment variables"
+export TEST_VAR="test-value-123"
+TEMP_FILE="/tmp/test-env-save-$$.http"
+echo "GET https://example.com HTTP/1.1
+Host: example.com
+X-Test: \${TEST_VAR}" | ./http --no-send > "$TEMP_FILE" 2>&1
+if [ $? -eq 0 ] && grep -q "test-value-123" "$TEMP_FILE"; then
+    echo "✓ Environment variables preprocessed in output"
+    rm -f "$TEMP_FILE"
+else
+    echo "✗ Environment variables not preprocessed in output"
+    cat "$TEMP_FILE"
+    rm -f "$TEMP_FILE"
+    exit 1
+fi
+echo ""
+
+# Test 16: Load HTP format file with -f flag
+echo "Test 16: Load HTP format file with -f flag"
+TEMP_FILE="/tmp/test-htp-format-$$.http"
+echo "# Comment in HTP format
+GET https://example.com HTTP/1.1
+Host: example.com" > "$TEMP_FILE"
+./http -f "$TEMP_FILE" -dry-run > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+    echo "✓ HTP format loaded from file"
+    rm -f "$TEMP_FILE"
+else
+    echo "✗ Failed to load HTP format from file"
+    rm -f "$TEMP_FILE"
+    exit 1
+fi
+echo ""
+
 echo "=== All tests passed! ==="
