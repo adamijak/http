@@ -29,6 +29,7 @@ X-Request-ID: $(uuidgen)
 
 {"user": "$(whoami)"}
 ```
+*(Note: HTP format files use standard `\n` (LF) line endings, allowing text editors to easily edit them.)*
 
 ### RFC Compliant Format
 
