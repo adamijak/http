@@ -143,28 +143,30 @@ echo "Test 14: Strict mode fails on warnings"
 echo "POST https://example.com HTTP/1.1
 Host: example.com
 
-test body" | ./http -strict -dry-run 2>&1 | grep -q "Strict mode"
-if [ $? -eq 0 ]; then
-    echo "✓ Strict mode enforced"
-else
-    echo "✗ Strict mode not working"
-    exit 1
-fi
+test body" | ./http -strict -dry-run 2>&1 | grep -q "Strict mode" || { echo "✗ Strict mode not working"; exit 1; }
+# Also verify the command itself failed (exit code 1)
+echo "POST https://example.com HTTP/1.1
+Host: example.com
+
+test body" | ./http -strict -dry-run > /dev/null 2>&1 && { echo "✗ Strict mode didn't fail the command"; exit 1; }
+echo "✓ Strict mode enforced"
 echo ""
 
 # Test 15: Save preprocessed request with environment variables
 echo "Test 15: Save preprocessed request with environment variables"
 export TEST_VAR="test-value-123"
 TEMP_FILE="/tmp/test-env-save-$$.http"
+STDERR_FILE="/tmp/test-env-save-stderr-$$.txt"
 echo "GET https://example.com HTTP/1.1
 Host: example.com
-X-Test: \${TEST_VAR}" | ./http -save-request "$TEMP_FILE" > /dev/null 2>&1
-if grep -q "test-value-123" "$TEMP_FILE"; then
+X-Test: \${TEST_VAR}" | ./http -save-request "$TEMP_FILE" 2>"$STDERR_FILE"
+if [ $? -eq 0 ] && grep -q "test-value-123" "$TEMP_FILE"; then
     echo "✓ Environment variables preprocessed and saved"
-    rm -f "$TEMP_FILE"
+    rm -f "$TEMP_FILE" "$STDERR_FILE"
 else
     echo "✗ Environment variables not preprocessed in saved file"
-    rm -f "$TEMP_FILE"
+    cat "$STDERR_FILE"
+    rm -f "$TEMP_FILE" "$STDERR_FILE"
     exit 1
 fi
 echo ""
