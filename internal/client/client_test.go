@@ -1,7 +1,6 @@
 package client
 
 import (
-	"crypto/tls"
 	"fmt"
 	"strings"
 	"testing"
@@ -84,9 +83,6 @@ func TestSendHTTPS(t *testing.T) {
 	// Note: For testing with self-signed certs, we need to modify the client
 	// to accept insecure certificates. In production, this should validate properly.
 	// For now, we'll skip TLS verification in the test
-	originalTLSConfig := tls.Config{
-		InsecureSkipVerify: true,
-	}
 
 	// Create request
 	req := &models.HTTPRequest{
@@ -103,7 +99,7 @@ func TestSendHTTPS(t *testing.T) {
 	// This is a limitation of the current implementation
 	// For now, let's test that the client attempts the connection
 	_, err = Send(req)
-	
+
 	// We expect an error due to certificate verification
 	// This is actually correct behavior for production
 	if err == nil {
@@ -119,8 +115,6 @@ func TestSendHTTPS(t *testing.T) {
 		}
 		t.Logf("Expected certificate error: %v", err)
 	}
-
-	_ = originalTLSConfig // Keep the variable to avoid unused warning
 }
 
 // TestSendPOSTWithBody tests sending a POST request with a body
