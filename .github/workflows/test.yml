@@ -1,0 +1,82 @@
+name: Test
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test on Go ${{ matrix.go-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        go-version: ['1.23', '1.24']
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ matrix.go-version }}
+
+    - name: Verify Go installation
+      run: go version
+
+    - name: Download dependencies
+      run: go mod download
+
+    - name: Verify dependencies
+      run: go mod verify
+
+    - name: Build
+      run: go build -v -o http${{ runner.os == 'Windows' && '.exe' || '' }}
+
+    - name: Run Go vet
+      run: go vet ./...
+
+    - name: Run Go fmt check
+      run: |
+        if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+          echo "The following files need formatting:"
+          gofmt -s -l .
+          exit 1
+        fi
+      shell: bash
+      if: runner.os != 'Windows'
+
+    - name: Run test script (Unix)
+      run: bash test.sh
+      if: runner.os != 'Windows'
+
+    - name: Run basic tests (Windows)
+      run: |
+        go build -o http.exe
+        .\http.exe -version
+      if: runner.os == 'Windows'
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24'
+
+    - name: Run golangci-lint
+      uses: golangci/golangci-lint-action@v6
+      with:
+        version: latest
+        args: --timeout=5m

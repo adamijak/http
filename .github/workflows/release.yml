@@ -1,0 +1,184 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Binaries
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          # Linux
+          - goos: linux
+            goarch: amd64
+            name: linux-amd64
+          - goos: linux
+            goarch: arm64
+            name: linux-arm64
+          - goos: linux
+            goarch: 386
+            name: linux-386
+          # macOS
+          - goos: darwin
+            goarch: amd64
+            name: darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            name: darwin-arm64
+          # Windows
+          - goos: windows
+            goarch: amd64
+            name: windows-amd64
+          - goos: windows
+            goarch: 386
+            name: windows-386
+          # FreeBSD
+          - goos: freebsd
+            goarch: amd64
+            name: freebsd-amd64
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.24'
+
+    - name: Get version from tag
+      id: tag_name
+      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+    - name: Build binary
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+        CGO_ENABLED: 0
+      run: |
+        BINARY_NAME="http-${{ matrix.name }}"
+        if [ "${{ matrix.goos }}" = "windows" ]; then
+          BINARY_NAME="${BINARY_NAME}.exe"
+        fi
+        go build -v -ldflags="-s -w -X main.Version=${{ steps.tag_name.outputs.VERSION }}" -o "$BINARY_NAME"
+        
+        # Create checksum
+        if command -v sha256sum > /dev/null; then
+          sha256sum "$BINARY_NAME" > "${BINARY_NAME}.sha256"
+        else
+          shasum -a 256 "$BINARY_NAME" > "${BINARY_NAME}.sha256"
+        fi
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: http-${{ matrix.name }}
+        path: |
+          http-${{ matrix.name }}*
+        retention-days: 1
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Get version from tag
+      id: tag_name
+      run: |
+        echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        echo "VERSION_NUMBER=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts
+
+    - name: Prepare release assets
+      run: |
+        mkdir -p release
+        cd artifacts
+        for dir in */; do
+          mv "$dir"* ../release/
+        done
+        cd ../release
+        ls -lah
+
+    - name: Generate release notes
+      run: |
+        cat > release-notes.md << 'EOF'
+        # HTTP Client Tool ${{ steps.tag_name.outputs.VERSION }}
+        
+        ## Downloads
+        
+        Download the appropriate binary for your platform:
+        
+        ### Linux
+        - **Linux AMD64**: `http-linux-amd64`
+        - **Linux ARM64**: `http-linux-arm64`
+        - **Linux 386**: `http-linux-386`
+        
+        ### macOS
+        - **macOS AMD64** (Intel): `http-darwin-amd64`
+        - **macOS ARM64** (Apple Silicon): `http-darwin-arm64`
+        
+        ### Windows
+        - **Windows AMD64**: `http-windows-amd64.exe`
+        - **Windows 386**: `http-windows-386.exe`
+        
+        ### FreeBSD
+        - **FreeBSD AMD64**: `http-freebsd-amd64`
+        
+        ## Installation
+        
+        ### Quick Install (Linux/macOS)
+        
+        ```bash
+        # Download the binary (example for Linux AMD64)
+        wget https://github.com/${{ github.repository }}/releases/download/${{ steps.tag_name.outputs.VERSION }}/http-linux-amd64
+        
+        # Make it executable
+        chmod +x http-linux-amd64
+        
+        # Move to PATH (optional)
+        sudo mv http-linux-amd64 /usr/local/bin/http
+        ```
+        
+        ### Verify Checksum
+        
+        Each binary includes a `.sha256` file for verification:
+        
+        ```bash
+        # Download both binary and checksum
+        wget https://github.com/${{ github.repository }}/releases/download/${{ steps.tag_name.outputs.VERSION }}/http-linux-amd64
+        wget https://github.com/${{ github.repository }}/releases/download/${{ steps.tag_name.outputs.VERSION }}/http-linux-amd64.sha256
+        
+        # Verify
+        sha256sum -c http-linux-amd64.sha256
+        ```
+        
+        ## Usage
+        
+        See the [README](https://github.com/${{ github.repository }}/blob/${{ steps.tag_name.outputs.VERSION }}/README.md) for usage instructions.
+        EOF
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        name: Release ${{ steps.tag_name.outputs.VERSION }}
+        body_path: release-notes.md
+        files: release/*
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
