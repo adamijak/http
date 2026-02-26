@@ -205,13 +205,78 @@ export TEST_PIPE_VAR="test-value"
 OUTPUT1=$(./http -f "$TEMP_FILE" --no-send 2>&1)
 OUTPUT2=$(echo "$OUTPUT1" | ./http --no-send 2>&1)
 
-if echo "$OUTPUT2" | grep -q "https://example.com/api"; then
+# The output should still be RFC compliant with path-only format
+if echo "$OUTPUT2" | grep -q "GET /api HTTP/1.1"; then
     echo "✓ Pipeline flow works"
     rm -f "$TEMP_FILE"
 else
     echo "✗ Pipeline flow failed"
     echo "Output: $OUTPUT2"
     rm -f "$TEMP_FILE"
+    exit 1
+fi
+echo ""
+
+# Test 18: --no-send outputs path-only format (RFC compliant)
+echo "Test 18: --no-send outputs path-only format (RFC compliant)"
+OUTPUT=$(echo "GET https://graph.microsoft.com/v1.0/me HTTP/1.1
+Host: graph.microsoft.com" | ./http --no-send 2>&1)
+if echo "$OUTPUT" | grep -q "GET /v1.0/me HTTP/1.1"; then
+    echo "✓ --no-send outputs path-only format"
+else
+    echo "✗ --no-send should output path-only format"
+    echo "Output: $OUTPUT"
+    exit 1
+fi
+echo ""
+
+# Test 19: --no-send should NOT output full URL
+echo "Test 19: --no-send should NOT output full URL"
+OUTPUT=$(echo "GET https://graph.microsoft.com/v1.0/me HTTP/1.1
+Host: graph.microsoft.com" | ./http --no-send 2>&1)
+if echo "$OUTPUT" | grep -q "GET https://"; then
+    echo "✗ --no-send should NOT output full URL"
+    echo "Output: $OUTPUT"
+    exit 1
+else
+    echo "✓ --no-send does not output full URL"
+fi
+echo ""
+
+# Test 20: --strict flag catches full URL in request line
+echo "Test 20: --strict flag catches full URL in request line"
+echo "GET https://graph.microsoft.com/v1.0/me HTTP/1.1
+Host: graph.microsoft.com" | ./http --no-send --strict 2>&1 | grep -q "Request line contains full URL" || { echo "✗ --strict should catch full URL in request line"; exit 1; }
+# Also verify the command itself failed (exit code 1)
+echo "GET https://graph.microsoft.com/v1.0/me HTTP/1.1
+Host: graph.microsoft.com" | ./http --no-send --strict > /dev/null 2>&1 && { echo "✗ --strict didn't fail for full URL"; exit 1; }
+echo "✓ --strict flag catches full URL in request line"
+echo ""
+
+# Test 21: --strict flag allows path-only format
+echo "Test 21: --strict flag allows path-only format"
+OUTPUT=$(echo "GET /v1.0/me HTTP/1.1
+Host: graph.microsoft.com" | ./http --no-send --strict 2>&1)
+EXIT_CODE=$?
+if [ $EXIT_CODE -eq 0 ] && echo "$OUTPUT" | grep -q "GET /v1.0/me HTTP/1.1"; then
+    echo "✓ --strict flag allows path-only format"
+else
+    echo "✗ --strict should allow path-only format"
+    echo "Exit code: $EXIT_CODE"
+    echo "Output: $OUTPUT"
+    exit 1
+fi
+echo ""
+
+# Test 22: --no-send preserves query parameters in path
+echo "Test 22: --no-send preserves query parameters in path"
+OUTPUT=$(echo "GET https://api.example.com/search?q=test&limit=10 HTTP/1.1
+Host: api.example.com" | ./http --no-send 2>&1)
+if echo "$OUTPUT" | grep -q "GET /search?q=test&limit=10 HTTP/1.1"; then
+    echo "✓ --no-send preserves query parameters"
+else
+    echo "✗ --no-send should preserve query parameters in path"
+    echo "Output: $OUTPUT"
     exit 1
 fi
 echo ""
