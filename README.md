@@ -1,5 +1,8 @@
 # HTTP Client Tool
 
+[![Test](https://github.com/adamijak/http/workflows/Test/badge.svg)](https://github.com/adamijak/http/actions/workflows/test.yml)
+[![Release](https://github.com/adamijak/http/workflows/Release/badge.svg)](https://github.com/adamijak/http/actions/workflows/release.yml)
+
 A command-line HTTP client written in Go that processes `.http` files, validates requests against HTTP standards, and sends them over TCP with colored output.
 
 ## Features
@@ -16,6 +19,19 @@ A command-line HTTP client written in Go that processes `.http` files, validates
 - 👁️ **Dry Run Mode**: Preview preprocessed and validated requests without sending
 
 ## Installation
+
+### Pre-built Binaries
+
+Download pre-built binaries from the [Releases page](https://github.com/adamijak/http/releases).
+
+```bash
+# Example: Linux AMD64
+wget https://github.com/adamijak/http/releases/latest/download/http-linux-amd64
+chmod +x http-linux-amd64
+sudo mv http-linux-amd64 /usr/local/bin/http
+```
+
+### Build from Source
 
 ```bash
 go build -o http
