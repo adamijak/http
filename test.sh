@@ -246,7 +246,7 @@ echo ""
 # Test 20: --strict flag catches full URL in request line
 echo "Test 20: --strict flag catches full URL in request line"
 echo "GET https://graph.microsoft.com/v1.0/me HTTP/1.1
-Host: graph.microsoft.com" | ./http --no-send --strict 2>&1 | grep -q "Request line contains full URL" || { echo "✗ --strict should catch full URL in request line"; exit 1; }
+Host: graph.microsoft.com" | ./http --no-send --strict 2>&1 | grep -q "Request line should use path-only format" || { echo "✗ --strict should catch full URL in request line"; exit 1; }
 # Also verify the command itself failed (exit code 1)
 echo "GET https://graph.microsoft.com/v1.0/me HTTP/1.1
 Host: graph.microsoft.com" | ./http --no-send --strict > /dev/null 2>&1 && { echo "✗ --strict didn't fail for full URL"; exit 1; }

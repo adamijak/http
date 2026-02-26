@@ -292,7 +292,7 @@ func validateRequestLineFormat(req *models.HTTPRequest, result *ValidationResult
 			// This is a full URL, add a warning for RFC compliance
 			// The output will be converted to path-only format automatically
 			result.Warnings = append(result.Warnings,
-				"Request line contains full URL; RFC compliant output will use path-only format (use path with Host header for strict compliance)")
+				"Request line should use path-only format (e.g., /v1.0/me) with Host header instead of full URL for RFC compliance")
 		}
 	}
 }

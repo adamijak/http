@@ -376,7 +376,7 @@ func TestValidateRequestLineFormatWithFullURL(t *testing.T) {
 	// Check for specific warning message
 	found := false
 	for _, warning := range result.Warnings {
-		if strings.Contains(warning, "Request line contains full URL") {
+		if strings.Contains(warning, "Request line should use path-only format") {
 			found = true
 			break
 		}
@@ -401,7 +401,7 @@ func TestValidateRequestLineFormatWithPath(t *testing.T) {
 
 	// Should not have a warning about request line format
 	for _, warning := range result.Warnings {
-		if strings.Contains(warning, "Request line contains full URL") {
+		if strings.Contains(warning, "Request line should use path-only format") {
 			t.Errorf("Unexpected warning for path-only URL: %s", warning)
 		}
 	}
@@ -428,7 +428,7 @@ func TestValidateRequestLineFormatWithHTTPURL(t *testing.T) {
 	// Check for specific warning message
 	found := false
 	for _, warning := range result.Warnings {
-		if strings.Contains(warning, "Request line contains full URL") {
+		if strings.Contains(warning, "Request line should use path-only format") {
 			found = true
 			break
 		}
