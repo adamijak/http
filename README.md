@@ -261,6 +261,37 @@ go build -o http
 
 ### Test
 
+Run the test suite:
+
+```bash
+./test.sh
+```
+
+Or use Make:
+
+```bash
+# Run all checks (format, lint, test)
+make check
+
+# Individual commands
+make format    # Format code with gofmt
+make lint      # Run go vet
+make test      # Run example tests
+```
+
+### Contributing
+
+Before submitting a pull request:
+
+1. **Format your code**: `make format` or `gofmt -w .`
+2. **Lint your code**: `make lint` or `go vet ./...`
+3. **Run all tests**: `./test.sh`
+4. **Verify everything**: `make check`
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+
+### Manual Testing
+
 ```bash
 # Create a test request
 cat > test.http <<EOF

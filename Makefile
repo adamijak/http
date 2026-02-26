@@ -1,10 +1,27 @@
 # Makefile for HTTP Client Tool
 # AI Agent Note: Simple build automation
 
-.PHONY: build test clean install examples help
+.PHONY: build test clean install examples help format lint check
 
 # Default target
 all: build
+
+# Format code
+format:
+	@echo "Formatting code..."
+	gofmt -w .
+	@echo "Code formatted."
+
+# Lint code
+lint:
+	@echo "Linting code..."
+	go vet ./...
+	@echo "Linting complete."
+
+# Check formatting, linting, and tests
+check: format lint
+	@echo "Running test suite..."
+	./test.sh
 
 # Build the binary
 build:
@@ -61,11 +78,16 @@ help:
 	@echo "Available targets:"
 	@echo "  make build      - Build the http client binary"
 	@echo "  make build-all  - Build for multiple platforms"
+	@echo "  make format     - Format all Go files with gofmt"
+	@echo "  make lint       - Lint code with go vet"
+	@echo "  make check      - Format, lint, and run all tests"
 	@echo "  make test       - Run tests with example files"
 	@echo "  make examples   - Run all example requests"
 	@echo "  make install    - Install to /usr/local/bin"
 	@echo "  make clean      - Remove build artifacts"
 	@echo "  make help       - Show this help message"
+	@echo ""
+	@echo "Before submitting a PR, always run: make check"
 	@echo ""
 	@echo "Usage examples:"
 	@echo "  cat request.http | ./http"
