@@ -12,7 +12,7 @@ func TestParseSimpleGET(t *testing.T) {
 Host: example.com
 User-Agent: test-client`
 
-	req, err := Parse(input)
+	req, err := Parse(input, false)
 	if err != nil {
 		t.Fatalf("Failed to parse: %v", err)
 	}
@@ -46,7 +46,7 @@ Content-Type: application/json
 
 {"name":"John","age":30}`
 
-	req, err := Parse(input)
+	req, err := Parse(input, false)
 	if err != nil {
 		t.Fatalf("Failed to parse: %v", err)
 	}
@@ -73,7 +73,7 @@ Host: example.com
 # Comment in headers
 User-Agent: test`
 
-	req, err := Parse(input)
+	req, err := Parse(input, false)
 	if err != nil {
 		t.Fatalf("Failed to parse: %v", err)
 	}
@@ -103,7 +103,7 @@ func TestParseWithEnvVars(t *testing.T) {
 Host: ${TEST_HOST}
 Authorization: Bearer ${TEST_TOKEN}`
 
-	req1, err := Parse(input1)
+	req1, err := Parse(input1, false)
 	if err != nil {
 		t.Fatalf("Failed to parse: %v", err)
 	}
@@ -121,7 +121,7 @@ Authorization: Bearer ${TEST_TOKEN}`
 Host: $TEST_HOST
 Authorization: Bearer $TEST_TOKEN`
 
-	req2, err := Parse(input2)
+	req2, err := Parse(input2, false)
 	if err != nil {
 		t.Fatalf("Failed to parse: %v", err)
 	}
@@ -137,7 +137,7 @@ func TestParseWithShellCommands(t *testing.T) {
 Host: example.com
 X-Year: $(echo 2024)`
 
-	req, err := Parse(input)
+	req, err := Parse(input, false)
 	if err != nil {
 		t.Fatalf("Failed to parse: %v", err)
 	}
@@ -152,7 +152,7 @@ func TestParsePathOnlyURL(t *testing.T) {
 	input := `GET /api/users HTTP/1.1
 Host: example.com`
 
-	req, err := Parse(input)
+	req, err := Parse(input, false)
 	if err != nil {
 		t.Fatalf("Failed to parse: %v", err)
 	}
@@ -175,7 +175,7 @@ Accept: application/json
 Authorization: Bearer token123
 X-Custom-Header: custom-value`
 
-	req, err := Parse(input)
+	req, err := Parse(input, false)
 	if err != nil {
 		t.Fatalf("Failed to parse: %v", err)
 	}
@@ -200,7 +200,7 @@ func TestParseWithQueryParams(t *testing.T) {
 	input := `GET https://example.com/search?q=test&limit=10 HTTP/1.1
 Host: example.com`
 
-	req, err := Parse(input)
+	req, err := Parse(input, false)
 	if err != nil {
 		t.Fatalf("Failed to parse: %v", err)
 	}
@@ -218,7 +218,7 @@ func TestParseHTTPVersions(t *testing.T) {
 		t.Run(version, func(t *testing.T) {
 			input := "GET https://example.com " + version + "\nHost: example.com"
 
-			req, err := Parse(input)
+			req, err := Parse(input, false)
 			if err != nil {
 				t.Fatalf("Failed to parse: %v", err)
 			}
@@ -238,7 +238,7 @@ func TestParseMethods(t *testing.T) {
 		t.Run(method, func(t *testing.T) {
 			input := method + " https://example.com HTTP/1.1\nHost: example.com"
 
-			req, err := Parse(input)
+			req, err := Parse(input, false)
 			if err != nil {
 				t.Fatalf("Failed to parse %s: %v", method, err)
 			}
@@ -258,7 +258,7 @@ Content-Type: application/json
 
 `
 
-	req, err := Parse(input)
+	req, err := Parse(input, false)
 	if err != nil {
 		t.Fatalf("Failed to parse: %v", err)
 	}
@@ -280,7 +280,7 @@ Content-Type: application/json
   "email": "john@example.com"
 }`
 
-	req, err := Parse(input)
+	req, err := Parse(input, false)
 	if err != nil {
 		t.Fatalf("Failed to parse: %v", err)
 	}
@@ -304,7 +304,7 @@ func TestParseInvalidRequest(t *testing.T) {
 
 	for _, input := range invalidInputs {
 		t.Run("Invalid_"+input, func(t *testing.T) {
-			_, err := Parse(input)
+			_, err := Parse(input, false)
 			if err == nil {
 				t.Error("Expected error for invalid input")
 			}
@@ -314,7 +314,7 @@ func TestParseInvalidRequest(t *testing.T) {
 	// "GET HTTP/1.1" parses but will fail validation (missing URL)
 	// This is by design - parser is lenient, validator is strict
 	t.Run("ParsesButInvalid_GET_HTTP/1.1", func(t *testing.T) {
-		req, err := Parse("GET HTTP/1.1")
+		req, err := Parse("GET HTTP/1.1", false)
 		if err != nil {
 			t.Errorf("Parser should be lenient, got error: %v", err)
 		}
@@ -332,7 +332,7 @@ Host:example.com
 User-Agent:  test-client  
 Accept:application/json`
 
-	req, err := Parse(input)
+	req, err := Parse(input, false)
 	if err != nil {
 		t.Fatalf("Failed to parse: %v", err)
 	}
@@ -351,7 +351,7 @@ Accept:application/json`
 func TestParseWithMixedLineEndings(t *testing.T) {
 	// Test with \r\n (Windows)
 	input1 := "GET https://example.com HTTP/1.1\r\nHost: example.com\r\n"
-	req1, err := Parse(input1)
+	req1, err := Parse(input1, false)
 	if err != nil {
 		t.Fatalf("Failed to parse with \\r\\n: %v", err)
 	}
@@ -361,11 +361,54 @@ func TestParseWithMixedLineEndings(t *testing.T) {
 
 	// Test with \n (Unix)
 	input2 := "GET https://example.com HTTP/1.1\nHost: example.com\n"
-	req2, err := Parse(input2)
+	req2, err := Parse(input2, false)
 	if err != nil {
 		t.Fatalf("Failed to parse with \\n: %v", err)
 	}
 	if req2.Method != "GET" {
 		t.Error("Failed to parse with \\n line endings")
 	}
+}
+
+// TestParseStrictMode tests that strict mode disables preprocessing
+func TestParseStrictMode(t *testing.T) {
+	// Set test environment variable
+	_ = os.Setenv("TEST_STRICT_VAR", "should-not-substitute")
+	defer func() {
+		_ = os.Unsetenv("TEST_STRICT_VAR")
+	}()
+
+	// Input with HTP features (comments, env vars, shell commands)
+	input := `# This is a comment
+GET https://example.com HTTP/1.1
+Host: example.com
+X-Env: ${TEST_STRICT_VAR}
+X-Shell: $(echo hello)`
+
+	// With strict mode disabled (false), preprocessing should happen
+	req1, err := Parse(input, false)
+	if err != nil {
+		t.Fatalf("Failed to parse with preprocessing: %v", err)
+	}
+	if req1.Headers["X-Env"] != "should-not-substitute" {
+		t.Errorf("Expected env var substitution in non-strict mode, got %s", req1.Headers["X-Env"])
+	}
+	if req1.Headers["X-Shell"] != "hello" {
+		t.Errorf("Expected shell command execution in non-strict mode, got %s", req1.Headers["X-Shell"])
+	}
+
+	// With strict mode enabled (true), preprocessing should NOT happen
+	req2, err := Parse(input, true)
+	if err != nil {
+		t.Fatalf("Failed to parse in strict mode: %v", err)
+	}
+	// In strict mode, env vars and shell commands are NOT substituted
+	if req2.Headers["X-Env"] != "${TEST_STRICT_VAR}" {
+		t.Errorf("Expected no env var substitution in strict mode, got %s", req2.Headers["X-Env"])
+	}
+	if req2.Headers["X-Shell"] != "$(echo hello)" {
+		t.Errorf("Expected no shell command execution in strict mode, got %s", req2.Headers["X-Shell"])
+	}
+	// Note: In strict mode, parseHTTP is called directly without preprocessing,
+	// so comments are NOT removed and would be treated as invalid request lines.
 }

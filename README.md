@@ -66,14 +66,15 @@ Content-Length: 15
 ## Features
 
 - 🚀 **HTTP & HTTPS Support**: Send requests over plain HTTP or secure HTTPS
-- ✅ **Request Validation**: Validates requests against HTTP RFC standards with colored error/warning output
+- ✅ **Request Validation**: Validates requests against HTTP RFC standards with colored error/warning output to stderr
 - 📝 **Dual Format Support**: HTP format (human-friendly with preprocessing) and RFC compliant format
 - 🔧 **Preprocessing**: 
   - Comments (# or //)
   - Environment variable substitution (${VAR} or $VAR)
   - Shell command execution $(command)
+  - Automatically disabled in strict mode
 - 💾 **Save/Load Requests**: Save preprocessed RFC compliant requests to files and load them later
-- 🔒 **Strict Mode**: Enforce full RFC compliance by failing on validation warnings
+- 🔒 **Strict Mode**: Enforce full RFC compliance by failing on validation warnings and disabling preprocessing
 - 🎨 **Colored Output**: Beautiful colored output for requests, responses, and validation
 - 📥 **stdin/stdout**: Reads from stdin and writes to stdout for easy piping
 - 🔍 **RFC Output Mode**: Output RFC compliant requests without sending for inspection or saving
@@ -366,6 +367,8 @@ cat request.http | ./http -strict
 cat request.http | ./http --no-send -strict > validated.http
 ```
 
+**Important**: Strict mode disables HTP preprocessing features (comments, environment variables, shell commands). It requires RFC-compliant format only. This ensures that the request being validated is exactly what will be sent over the wire.
+
 Example output:
 ```
 Validation Warnings:
@@ -378,6 +381,7 @@ Strict mode is useful for:
 - Ensuring production requests are fully RFC compliant
 - CI/CD pipelines where warnings should be treated as errors
 - Testing request templates for compliance
+- Validating saved/exported requests without preprocessing
 
 ### Send Request with Validation
 
