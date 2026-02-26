@@ -354,3 +354,86 @@ func TestValidateComplexRequest(t *testing.T) {
 		t.Errorf("Expected no errors for complex valid request, got: %v", result.Errors)
 	}
 }
+
+// TestValidateRequestLineFormatWithFullURL tests validation of request line with full URL
+func TestValidateRequestLineFormatWithFullURL(t *testing.T) {
+	req := &models.HTTPRequest{
+		Method:  "GET",
+		URL:     "https://graph.microsoft.com/v1.0/me",
+		Version: "HTTP/1.1",
+		Headers: map[string]string{
+			"Host": "graph.microsoft.com",
+		},
+	}
+
+	result := Validate(req, false)
+
+	// Should have a warning about full URL in request line
+	if !result.HasWarnings() {
+		t.Error("Expected warning for full URL in request line")
+	}
+
+	// Check for specific warning message
+	found := false
+	for _, warning := range result.Warnings {
+		if strings.Contains(warning, "Request line contains full URL") {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("Expected warning about request line format, got warnings: %v", result.Warnings)
+	}
+}
+
+// TestValidateRequestLineFormatWithPath tests validation of request line with path only
+func TestValidateRequestLineFormatWithPath(t *testing.T) {
+	req := &models.HTTPRequest{
+		Method:  "GET",
+		URL:     "/v1.0/me",
+		Version: "HTTP/1.1",
+		Headers: map[string]string{
+			"Host": "graph.microsoft.com",
+		},
+	}
+
+	result := Validate(req, false)
+
+	// Should not have a warning about request line format
+	for _, warning := range result.Warnings {
+		if strings.Contains(warning, "Request line contains full URL") {
+			t.Errorf("Unexpected warning for path-only URL: %s", warning)
+		}
+	}
+}
+
+// TestValidateRequestLineFormatWithHTTPURL tests validation with http:// URL
+func TestValidateRequestLineFormatWithHTTPURL(t *testing.T) {
+	req := &models.HTTPRequest{
+		Method:  "GET",
+		URL:     "http://example.com/api/data",
+		Version: "HTTP/1.1",
+		Headers: map[string]string{
+			"Host": "example.com",
+		},
+	}
+
+	result := Validate(req, false)
+
+	// Should have a warning about full URL in request line
+	if !result.HasWarnings() {
+		t.Error("Expected warning for full URL in request line")
+	}
+
+	// Check for specific warning message
+	found := false
+	for _, warning := range result.Warnings {
+		if strings.Contains(warning, "Request line contains full URL") {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("Expected warning about request line format, got warnings: %v", result.Warnings)
+	}
+}

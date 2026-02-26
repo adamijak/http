@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"strings"
 )
@@ -50,11 +51,25 @@ func (r *HTTPRequest) Print(w io.Writer, colored bool) {
 }
 
 // ToRawRequest converts the HTTPRequest to raw HTTP format for sending over TCP
+// This returns RFC compliant format with only the path (not the full URL) in the request line
 func (r *HTTPRequest) ToRawRequest() string {
 	var sb strings.Builder
 
-	// Request line
-	fmt.Fprintf(&sb, "%s %s %s\r\n", r.Method, r.URL, r.Version)
+	// Extract path from URL for RFC compliant format
+	requestTarget := r.URL
+	if parsedURL, err := url.Parse(r.URL); err == nil {
+		// Use path and query from URL
+		requestTarget = parsedURL.Path
+		if requestTarget == "" {
+			requestTarget = "/"
+		}
+		if parsedURL.RawQuery != "" {
+			requestTarget += "?" + parsedURL.RawQuery
+		}
+	}
+
+	// Request line (RFC compliant: METHOD PATH VERSION)
+	fmt.Fprintf(&sb, "%s %s %s\r\n", r.Method, requestTarget, r.Version)
 
 	// Headers
 	for key, value := range r.Headers {
