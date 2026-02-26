@@ -25,21 +25,21 @@ func (r *HTTPResponse) Print(w io.Writer, colored bool) {
 			statusColor = "\033[0;33m" // yellow
 		}
 
-		fmt.Fprintf(w, "\033[1;36m%s\033[0m %s%d %s\033[0m\n", r.Version, statusColor, r.StatusCode, r.Status)
+		_, _ = fmt.Fprintf(w, "\033[1;36m%s\033[0m %s%d %s\033[0m\n", r.Version, statusColor, r.StatusCode, r.Status)
 		for key, value := range r.Headers {
-			fmt.Fprintf(w, "\033[0;33m%s:\033[0m %s\n", key, value)
+			_, _ = fmt.Fprintf(w, "\033[0;33m%s:\033[0m %s\n", key, value)
 		}
 		if r.Body != "" {
-			fmt.Fprintf(w, "\n%s\n", r.Body)
+			_, _ = fmt.Fprintf(w, "\n%s\n", r.Body)
 		}
 	} else {
 		// Plain output
-		fmt.Fprintf(w, "%s %d %s\n", r.Version, r.StatusCode, r.Status)
+		_, _ = fmt.Fprintf(w, "%s %d %s\n", r.Version, r.StatusCode, r.Status)
 		for key, value := range r.Headers {
-			fmt.Fprintf(w, "%s: %s\n", key, value)
+			_, _ = fmt.Fprintf(w, "%s: %s\n", key, value)
 		}
 		if r.Body != "" {
-			fmt.Fprintf(w, "\n%s\n", r.Body)
+			_, _ = fmt.Fprintf(w, "\n%s\n", r.Body)
 		}
 	}
 }
