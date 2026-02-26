@@ -181,6 +181,14 @@ func readResponse(conn net.Conn, method string) (*models.HTTPResponse, error) {
 		return resp, nil
 	}
 
+	// Per RFC 7230, these status codes MUST NOT have a message body:
+	// - 1xx (informational)
+	// - 204 (No Content)
+	// - 304 (Not Modified)
+	if resp.StatusCode < 200 || resp.StatusCode == 204 || resp.StatusCode == 304 {
+		return resp, nil
+	}
+
 	// Read body
 	// Check for Content-Length
 	contentLengthStr, hasContentLength := resp.Headers["Content-Length"]

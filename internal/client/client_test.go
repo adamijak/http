@@ -323,3 +323,84 @@ func TestSendConnectionRefused(t *testing.T) {
 		t.Errorf("Expected connection error, got: %v", err)
 	}
 }
+
+// TestSendNoContentResponse tests handling of 204 No Content responses
+func TestSendNoContentResponse(t *testing.T) {
+	// Create test server that returns 204 No Content
+	ts, err := testserver.NewWithConfig(&testserver.HandlerConfig{
+		StatusCode: 204,
+		Headers:    map[string]string{},
+		Body:       "", // 204 must not have a body
+	})
+	if err != nil {
+		t.Fatalf("Failed to create test server: %v", err)
+	}
+	defer func() { _ = ts.Close() }()
+
+	// Create request
+	req := &models.HTTPRequest{
+		Method:  "DELETE",
+		URL:     ts.URL + "/resource/123",
+		Version: "HTTP/1.1",
+		Headers: map[string]string{
+			"Host": strings.TrimPrefix(ts.URL, "http://"),
+		},
+	}
+
+	// Send request - should complete quickly without waiting for body
+	resp, err := Send(req, 0)
+	if err != nil {
+		t.Fatalf("Failed to send request: %v", err)
+	}
+
+	// Validate response
+	if resp.StatusCode != 204 {
+		t.Errorf("Expected status code 204, got %d", resp.StatusCode)
+	}
+
+	// Body should be empty for 204 No Content
+	if resp.Body != "" {
+		t.Errorf("Expected empty body for 204 No Content, got: %s", resp.Body)
+	}
+}
+
+// TestSendNotModifiedResponse tests handling of 304 Not Modified responses
+func TestSendNotModifiedResponse(t *testing.T) {
+	// Create test server that returns 304 Not Modified
+	ts, err := testserver.NewWithConfig(&testserver.HandlerConfig{
+		StatusCode: 304,
+		Headers:    map[string]string{"ETag": "\"abc123\""},
+		Body:       "", // 304 must not have a body
+	})
+	if err != nil {
+		t.Fatalf("Failed to create test server: %v", err)
+	}
+	defer func() { _ = ts.Close() }()
+
+	// Create conditional request
+	req := &models.HTTPRequest{
+		Method:  "GET",
+		URL:     ts.URL + "/resource",
+		Version: "HTTP/1.1",
+		Headers: map[string]string{
+			"Host":          strings.TrimPrefix(ts.URL, "http://"),
+			"If-None-Match": "\"abc123\"",
+		},
+	}
+
+	// Send request - should complete quickly without waiting for body
+	resp, err := Send(req, 0)
+	if err != nil {
+		t.Fatalf("Failed to send request: %v", err)
+	}
+
+	// Validate response
+	if resp.StatusCode != 304 {
+		t.Errorf("Expected status code 304, got %d", resp.StatusCode)
+	}
+
+	// Body should be empty for 304 Not Modified
+	if resp.Body != "" {
+		t.Errorf("Expected empty body for 304 Not Modified, got: %s", resp.Body)
+	}
+}
