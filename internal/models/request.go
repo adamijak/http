@@ -30,21 +30,21 @@ func NewHTTPRequest() *HTTPRequest {
 func (r *HTTPRequest) Print(w io.Writer, colored bool) {
 	if colored {
 		// Colored output
-		fmt.Fprintf(w, "\033[1;36m%s %s %s\033[0m\n", r.Method, r.URL, r.Version)
+		_, _ = fmt.Fprintf(w, "\033[1;36m%s %s %s\033[0m\n", r.Method, r.URL, r.Version)
 		for key, value := range r.Headers {
-			fmt.Fprintf(w, "\033[0;33m%s:\033[0m %s\n", key, value)
+			_, _ = fmt.Fprintf(w, "\033[0;33m%s:\033[0m %s\n", key, value)
 		}
 		if r.Body != "" {
-			fmt.Fprintf(w, "\n\033[0;32m%s\033[0m\n", r.Body)
+			_, _ = fmt.Fprintf(w, "\n\033[0;32m%s\033[0m\n", r.Body)
 		}
 	} else {
 		// Plain output
-		fmt.Fprintf(w, "%s %s %s\n", r.Method, r.URL, r.Version)
+		_, _ = fmt.Fprintf(w, "%s %s %s\n", r.Method, r.URL, r.Version)
 		for key, value := range r.Headers {
-			fmt.Fprintf(w, "%s: %s\n", key, value)
+			_, _ = fmt.Fprintf(w, "%s: %s\n", key, value)
 		}
 		if r.Body != "" {
-			fmt.Fprintf(w, "\n%s\n", r.Body)
+			_, _ = fmt.Fprintf(w, "\n%s\n", r.Body)
 		}
 	}
 }
@@ -54,11 +54,11 @@ func (r *HTTPRequest) ToRawRequest() string {
 	var sb strings.Builder
 
 	// Request line
-	sb.WriteString(fmt.Sprintf("%s %s %s\r\n", r.Method, r.URL, r.Version))
+	fmt.Fprintf(&sb, "%s %s %s\r\n", r.Method, r.URL, r.Version)
 
 	// Headers
 	for key, value := range r.Headers {
-		sb.WriteString(fmt.Sprintf("%s: %s\r\n", key, value))
+		fmt.Fprintf(&sb, "%s: %s\r\n", key, value)
 	}
 
 	// Empty line between headers and body

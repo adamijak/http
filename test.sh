@@ -24,6 +24,12 @@ go vet ./...
 echo "✓ Linting passed"
 echo ""
 
+# Run unit tests
+echo "Running unit tests..."
+go test ./... -v
+echo "✓ Unit tests passed"
+echo ""
+
 # Build
 echo "Building..."
 go build -o http

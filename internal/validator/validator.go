@@ -38,42 +38,42 @@ func (v *ValidationResult) HasIssues() bool {
 // Print outputs validation results without colors
 func (v *ValidationResult) Print(w io.Writer) {
 	if len(v.Errors) > 0 {
-		fmt.Fprintln(w, "Validation Errors:")
+		_, _ = fmt.Fprintln(w, "Validation Errors:")
 		for _, err := range v.Errors {
-			fmt.Fprintf(w, "  [ERROR] %s\n", err)
+			_, _ = fmt.Fprintf(w, "  [ERROR] %s\n", err)
 		}
 	}
 
 	if len(v.Warnings) > 0 {
-		fmt.Fprintln(w, "Validation Warnings:")
+		_, _ = fmt.Fprintln(w, "Validation Warnings:")
 		for _, warn := range v.Warnings {
-			fmt.Fprintf(w, "  [WARN] %s\n", warn)
+			_, _ = fmt.Fprintf(w, "  [WARN] %s\n", warn)
 		}
 	}
 
 	if len(v.Errors) == 0 && len(v.Warnings) == 0 {
-		fmt.Fprintln(w, "✓ Validation passed")
+		_, _ = fmt.Fprintln(w, "✓ Validation passed")
 	}
 }
 
 // PrintColored outputs validation results with ANSI colors
 func (v *ValidationResult) PrintColored(w io.Writer) {
 	if len(v.Errors) > 0 {
-		fmt.Fprintln(w, "\033[1;31mValidation Errors:\033[0m")
+		_, _ = fmt.Fprintln(w, "\033[1;31mValidation Errors:\033[0m")
 		for _, err := range v.Errors {
-			fmt.Fprintf(w, "  \033[0;31m[ERROR]\033[0m %s\n", err)
+			_, _ = fmt.Fprintf(w, "  \033[0;31m[ERROR]\033[0m %s\n", err)
 		}
 	}
 
 	if len(v.Warnings) > 0 {
-		fmt.Fprintln(w, "\033[1;33mValidation Warnings:\033[0m")
+		_, _ = fmt.Fprintln(w, "\033[1;33mValidation Warnings:\033[0m")
 		for _, warn := range v.Warnings {
-			fmt.Fprintf(w, "  \033[0;33m[WARN]\033[0m %s\n", warn)
+			_, _ = fmt.Fprintf(w, "  \033[0;33m[WARN]\033[0m %s\n", warn)
 		}
 	}
 
 	if len(v.Errors) == 0 && len(v.Warnings) == 0 {
-		fmt.Fprintln(w, "\033[0;32m✓ Validation passed\033[0m")
+		_, _ = fmt.Fprintln(w, "\033[0;32m✓ Validation passed\033[0m")
 	}
 }
 
