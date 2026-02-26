@@ -91,10 +91,12 @@ User-Agent: test`
 // TestParseWithEnvVars tests environment variable substitution
 func TestParseWithEnvVars(t *testing.T) {
 	// Set test environment variables
-	os.Setenv("TEST_TOKEN", "secret-token-123")
-	os.Setenv("TEST_HOST", "api.test.com")
-	defer os.Unsetenv("TEST_TOKEN")
-	defer os.Unsetenv("TEST_HOST")
+	_ = os.Setenv("TEST_TOKEN", "secret-token-123")
+	_ = os.Setenv("TEST_HOST", "api.test.com")
+	defer func() {
+		_ = os.Unsetenv("TEST_TOKEN")
+		_ = os.Unsetenv("TEST_HOST")
+	}()
 
 	// Test ${VAR} syntax
 	input1 := `GET https://example.com HTTP/1.1
@@ -316,9 +318,9 @@ func TestParseInvalidRequest(t *testing.T) {
 		if err != nil {
 			t.Errorf("Parser should be lenient, got error: %v", err)
 		}
-		if req != nil && req.URL == "HTTP/1.1" {
-			// This is expected - parser treats "HTTP/1.1" as URL
-			// Validator will catch this as an error
+		// Parser treats "HTTP/1.1" as URL, validator will catch this
+		if req == nil || req.URL != "HTTP/1.1" {
+			t.Errorf("Expected parser to treat HTTP/1.1 as URL")
 		}
 	})
 }

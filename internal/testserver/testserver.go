@@ -98,7 +98,9 @@ func NewWithConfig(config *HandlerConfig) (*TestServer, error) {
 	ts.Server = &http.Server{Handler: handler}
 	ts.URL = fmt.Sprintf("http://%s", listener.Addr().String())
 
-	go ts.Server.Serve(listener)
+	go func() {
+		_ = ts.Server.Serve(listener)
+	}()
 
 	// Give server a moment to start
 	time.Sleep(10 * time.Millisecond)
@@ -175,7 +177,9 @@ func NewTLSWithConfig(config *HandlerConfig) (*TestServer, error) {
 	ts.Server = &http.Server{Handler: handler}
 	ts.URL = fmt.Sprintf("https://%s", listener.Addr().String())
 
-	go ts.Server.Serve(tlsListener)
+	go func() {
+		_ = ts.Server.Serve(tlsListener)
+	}()
 
 	// Give server a moment to start
 	time.Sleep(10 * time.Millisecond)

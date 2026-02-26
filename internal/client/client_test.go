@@ -20,7 +20,7 @@ func TestSendHTTP(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create test server: %v", err)
 	}
-	defer ts.Close()
+	defer func() { _ = ts.Close() }()
 
 	// Create request
 	req := &models.HTTPRequest{
@@ -78,7 +78,7 @@ func TestSendHTTPS(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create TLS test server: %v", err)
 	}
-	defer ts.Close()
+	defer func() { _ = ts.Close() }()
 
 	// Note: For testing with self-signed certs, we need to modify the client
 	// to accept insecure certificates. In production, this should validate properly.
@@ -128,7 +128,7 @@ func TestSendPOSTWithBody(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create test server: %v", err)
 	}
-	defer ts.Close()
+	defer func() { _ = ts.Close() }()
 
 	// Create POST request
 	body := `{"name":"John","age":30}`
@@ -173,7 +173,7 @@ func TestSendWithCustomHeaders(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create test server: %v", err)
 	}
-	defer ts.Close()
+	defer func() { _ = ts.Close() }()
 
 	// Create request with custom headers
 	req := &models.HTTPRequest{
@@ -216,7 +216,7 @@ func TestSendWithQueryParams(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create test server: %v", err)
 	}
-	defer ts.Close()
+	defer func() { _ = ts.Close() }()
 
 	// Create request with query params
 	req := &models.HTTPRequest{
@@ -257,7 +257,7 @@ func TestSendMultipleMethods(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to create test server: %v", err)
 			}
-			defer ts.Close()
+			defer func() { _ = ts.Close() }()
 
 			// Create request
 			req := &models.HTTPRequest{

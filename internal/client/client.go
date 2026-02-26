@@ -60,7 +60,9 @@ func Send(req *models.HTTPRequest) (*models.HTTPResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("connection failed: %w", err)
 	}
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 
 	// Set timeout
 	err = conn.SetDeadline(time.Now().Add(30 * time.Second))
@@ -95,11 +97,11 @@ func buildRawRequest(req *models.HTTPRequest, path string) string {
 	var sb strings.Builder
 
 	// Request line
-	sb.WriteString(fmt.Sprintf("%s %s %s\r\n", req.Method, path, req.Version))
+	fmt.Fprintf(&sb, "%s %s %s\r\n", req.Method, path, req.Version)
 
 	// Headers
 	for key, value := range req.Headers {
-		sb.WriteString(fmt.Sprintf("%s: %s\r\n", key, value))
+		fmt.Fprintf(&sb, "%s: %s\r\n", key, value)
 	}
 
 	// Empty line between headers and body
