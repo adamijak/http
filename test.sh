@@ -49,14 +49,14 @@ echo "✓ Help flag works"
 echo ""
 
 # Test 3: Simple GET
-echo "Test 3: Simple GET request (dry-run)"
-cat examples/simple-get.http | ./http -dry-run > /dev/null
+echo "Test 3: Simple GET request (output RFC format)"
+cat examples/simple-get.http | ./http --no-send > /dev/null
 echo "✓ Simple GET request parsed"
 echo ""
 
 # Test 4: POST with body
-echo "Test 4: POST with JSON body (dry-run)"
-cat examples/post-json.http | ./http -dry-run > /dev/null
+echo "Test 4: POST with JSON body (output RFC format)"
+cat examples/post-json.http | ./http --no-send > /dev/null
 echo "✓ POST request with body parsed"
 echo ""
 
@@ -67,7 +67,7 @@ export TEST_KEY="key456"
 echo "GET https://example.com HTTP/1.1
 Host: example.com
 Authorization: Bearer \${TEST_TOKEN}
-X-Key: \$TEST_KEY" | ./http -dry-run | grep -q "token123"
+X-Key: \$TEST_KEY" | ./http --no-send | grep -q "token123"
 echo "✓ Environment variables substituted"
 echo ""
 
@@ -76,7 +76,7 @@ echo "Test 6: Shell command execution"
 YEAR=$(date +%Y)
 echo "GET https://example.com HTTP/1.1
 Host: example.com
-X-Date: \$(date +%Y)" | ./http -dry-run -no-color | grep -q "X-Date: $YEAR"
+X-Date: \$(date +%Y)" | ./http --no-send -no-color | grep -q "X-Date: $YEAR"
 echo "✓ Shell commands executed"
 echo ""
 
@@ -85,19 +85,19 @@ echo "Test 7: Comment handling"
 echo "# This is a comment
 // This is also a comment
 GET https://example.com HTTP/1.1
-Host: example.com" | ./http -dry-run > /dev/null
+Host: example.com" | ./http --no-send > /dev/null
 echo "✓ Comments handled"
 echo ""
 
 # Test 8: No color mode
 echo "Test 8: No-color mode"
-cat examples/simple-get.http | ./http -dry-run -no-color > /dev/null
+cat examples/simple-get.http | ./http --no-send -no-color > /dev/null
 echo "✓ No-color mode works"
 echo ""
 
 # Test 9: Validation error
 echo "Test 9: Validation error detection"
-echo "GET example.com HTTP/1.1" | ./http -dry-run 2>&1 | grep -q "URL must include scheme" || exit 1
+echo "GET example.com HTTP/1.1" | ./http --no-send 2>&1 | grep -q "URL must include scheme" || exit 1
 echo "✓ Validation errors detected"
 echo ""
 
@@ -106,13 +106,13 @@ echo "Test 10: Content-Length auto-addition"
 echo "POST https://example.com HTTP/1.1
 Host: example.com
 
-test body" | ./http -dry-run -no-color 2>&1 | grep -q "Content-Length: 9"
+test body" | ./http --no-send -no-color 2>&1 | grep -q "Content-Length: 9"
 echo "✓ Content-Length auto-added"
 echo ""
 
 # Test 11: Host header auto-add
 echo "Test 11: Host header auto-addition"
-echo "GET https://example.com/path HTTP/1.1" | ./http -dry-run -no-color 2>&1 | grep -q "Host: example.com"
+echo "GET https://example.com/path HTTP/1.1" | ./http --no-send -no-color 2>&1 | grep -q "Host: example.com"
 echo "✓ Host header auto-added"
 echo ""
 
@@ -132,7 +132,7 @@ echo ""
 echo "Test 13: Load RFC compliant request from file"
 TEMP_FILE="/tmp/test-load-request-$$.http"
 ./http --no-send < examples/simple-get.http > "$TEMP_FILE" 2>&1
-./http -f "$TEMP_FILE" -dry-run > /dev/null 2>&1
+./http -f "$TEMP_FILE" --no-send > /dev/null 2>&1
 if [ $? -eq 0 ]; then
     echo "✓ Request loaded from file"
     rm -f "$TEMP_FILE"
@@ -148,12 +148,12 @@ echo "Test 14: Strict mode fails on warnings"
 echo "POST https://example.com HTTP/1.1
 Host: example.com
 
-test body" | ./http -strict -dry-run 2>&1 | grep -q "Strict mode" || { echo "✗ Strict mode not working"; exit 1; }
+test body" | ./http -strict --no-send 2>&1 | grep -q "Strict mode" || { echo "✗ Strict mode not working"; exit 1; }
 # Also verify the command itself failed (exit code 1)
 echo "POST https://example.com HTTP/1.1
 Host: example.com
 
-test body" | ./http -strict -dry-run > /dev/null 2>&1 && { echo "✗ Strict mode didn't fail the command"; exit 1; }
+test body" | ./http -strict --no-send > /dev/null 2>&1 && { echo "✗ Strict mode didn't fail the command"; exit 1; }
 echo "✓ Strict mode enforced"
 echo ""
 
@@ -181,7 +181,7 @@ TEMP_FILE="/tmp/test-htp-format-$$.http"
 echo "# Comment in HTP format
 GET https://example.com HTTP/1.1
 Host: example.com" > "$TEMP_FILE"
-./http -f "$TEMP_FILE" -dry-run > /dev/null 2>&1
+./http -f "$TEMP_FILE" --no-send > /dev/null 2>&1
 if [ $? -eq 0 ]; then
     echo "✓ HTP format loaded from file"
     rm -f "$TEMP_FILE"

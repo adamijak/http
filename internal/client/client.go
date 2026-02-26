@@ -24,7 +24,10 @@ import (
 // 2. Establish TCP connection (with TLS for HTTPS)
 // 3. Send raw HTTP request
 // 4. Read and parse response
-func Send(req *models.HTTPRequest) (*models.HTTPResponse, error) {
+//
+// The portOverride parameter allows explicit port specification. If set to 0,
+// the port is determined from the URL or defaults to 443 for HTTPS, 80 for HTTP.
+func Send(req *models.HTTPRequest, portOverride int) (*models.HTTPResponse, error) {
 	// Parse URL
 	parsedURL, err := url.Parse(req.URL)
 	if err != nil {
@@ -35,7 +38,12 @@ func Send(req *models.HTTPRequest) (*models.HTTPResponse, error) {
 	host := parsedURL.Host
 	port := parsedURL.Port()
 
-	if port == "" {
+	// If port override is specified, use it
+	if portOverride > 0 {
+		port = strconv.Itoa(portOverride)
+		host = fmt.Sprintf("%s:%s", parsedURL.Hostname(), port)
+	} else if port == "" {
+		// No port in URL and no override, use default for scheme
 		if parsedURL.Scheme == "https" {
 			port = "443"
 		} else {

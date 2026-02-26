@@ -17,19 +17,33 @@ import (
 // and sends requests over TCP with colored output
 func main() {
 	// Command-line flags
-	dryRun := flag.Bool("dry-run", false, "Show preprocessed and validated request without sending")
-	noColor := flag.Bool("no-color", false, "Disable colored output")
-	verbose := flag.Bool("v", false, "Verbose output")
-	version := flag.Bool("version", false, "Show version information")
-	noSecure := flag.Bool("no-secure", false, "Send request in plain HTTP instead of HTTPS")
-	noSend := flag.Bool("no-send", false, "Output the RFC compliant request to stdout without sending")
-	inputFile := flag.String("f", "", "Read request from file (supports both HTP and RFC compliant formats)")
-	strict := flag.Bool("strict", false, "Strict mode: fail on any validation warnings (RFC compliance enforcement)")
+	var (
+		noColor   bool
+		verbose   bool
+		version   bool
+		noSecure  bool
+		noSend    bool
+		inputFile string
+		strict    bool
+		port      int
+	)
+
+	// Long and short flags
+	flag.BoolVar(&noColor, "no-color", false, "Disable colored output")
+	flag.BoolVar(&verbose, "verbose", false, "Verbose output")
+	flag.BoolVar(&verbose, "v", false, "Verbose output (shorthand)")
+	flag.BoolVar(&version, "version", false, "Show version information")
+	flag.BoolVar(&noSecure, "no-secure", false, "Send request in plain HTTP instead of HTTPS")
+	flag.BoolVar(&noSend, "no-send", false, "Output the RFC compliant request to stdout without sending")
+	flag.StringVar(&inputFile, "file", "", "Read request from file (supports both HTP and RFC compliant formats)")
+	flag.StringVar(&inputFile, "f", "", "Read request from file (shorthand)")
+	flag.BoolVar(&strict, "strict", false, "Strict mode: fail on any validation warnings (RFC compliance enforcement)")
+	flag.IntVar(&port, "port", 0, "Explicitly set the port (overrides URL and default ports)")
 
 	flag.Parse()
 
 	// Show version
-	if *version {
+	if version {
 		fmt.Printf("%s version %s\n", AppName, Version)
 		return
 	}
@@ -39,8 +53,8 @@ func main() {
 	var input []byte
 
 	// Read from file or stdin
-	if *inputFile != "" {
-		input, err = os.ReadFile(*inputFile)
+	if inputFile != "" {
+		input, err = os.ReadFile(inputFile)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error reading file: %v\n", err)
 			os.Exit(1)
@@ -61,14 +75,14 @@ func main() {
 	}
 
 	// Validate the request
-	validationResult := validator.Validate(req, *noSecure)
+	validationResult := validator.Validate(req, noSecure)
 
 	// Output RFC compliant request to stdout if requested (skip validation output)
-	if *noSend {
+	if noSend {
 		// In strict mode, still fail on warnings
-		if *strict && validationResult.HasWarnings() {
+		if strict && validationResult.HasWarnings() {
 			// Show validation in this case
-			if !*noColor {
+			if !noColor {
 				validationResult.PrintColored(os.Stderr)
 			} else {
 				validationResult.Print(os.Stderr)
@@ -79,7 +93,7 @@ func main() {
 		// Exit if there are errors
 		if validationResult.HasErrors() {
 			// Show validation errors
-			if !*noColor {
+			if !noColor {
 				validationResult.PrintColored(os.Stderr)
 			} else {
 				validationResult.Print(os.Stderr)
@@ -92,7 +106,7 @@ func main() {
 	}
 
 	// For normal mode, show validation results
-	if !*noColor {
+	if !noColor {
 		validationResult.PrintColored(os.Stdout)
 	} else {
 		validationResult.Print(os.Stdout)
@@ -104,29 +118,22 @@ func main() {
 	}
 
 	// In strict mode, fail on warnings too
-	if *strict && validationResult.HasWarnings() {
+	if strict && validationResult.HasWarnings() {
 		fmt.Fprintf(os.Stderr, "\nStrict mode: Request has validation warnings and cannot be sent\n")
 		os.Exit(1)
 	}
 
-	// If dry-run, just show the preprocessed request
-	if *dryRun {
-		fmt.Println("\n--- Preprocessed Request ---")
-		req.Print(os.Stdout, !*noColor)
-		return
-	}
-
 	// Send the request
-	if *verbose {
+	if verbose {
 		fmt.Println("\n--- Sending Request ---")
 	}
 
-	resp, err := client.Send(req)
+	resp, err := client.Send(req, port)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error sending request: %v\n", err)
 		os.Exit(1)
 	}
 
 	// Print response
-	resp.Print(os.Stdout, !*noColor)
+	resp.Print(os.Stdout, !noColor)
 }
