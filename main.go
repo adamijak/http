@@ -23,7 +23,7 @@ func main() {
 	version := flag.Bool("version", false, "Show version information")
 	noSecure := flag.Bool("no-secure", false, "Send request in plain HTTP instead of HTTPS")
 	saveRequest := flag.String("save-request", "", "Save the preprocessed RFC compliant request to a file instead of sending")
-	loadRequest := flag.String("load-request", "", "Load an RFC compliant request from a file (bypasses preprocessing)")
+	inputFile := flag.String("f", "", "Read request from file (supports both HTP and RFC compliant formats)")
 	strict := flag.Bool("strict", false, "Strict mode: fail on any validation warnings (RFC compliance enforcement)")
 
 	flag.Parse()
@@ -36,34 +36,28 @@ func main() {
 
 	var req *models.HTTPRequest
 	var err error
+	var input []byte
 
-	// Load request from file or stdin
-	if *loadRequest != "" {
-		// Load from file (RFC compliant format, no preprocessing)
-		content, err := os.ReadFile(*loadRequest)
+	// Read from file or stdin
+	if *inputFile != "" {
+		input, err = os.ReadFile(*inputFile)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error reading file: %v\n", err)
 			os.Exit(1)
 		}
-		req, err = parser.ParseRFCCompliant(string(content))
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Parse error: %v\n", err)
-			os.Exit(1)
-		}
 	} else {
-		// Read from stdin
-		input, err := io.ReadAll(os.Stdin)
+		input, err = io.ReadAll(os.Stdin)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error reading input: %v\n", err)
 			os.Exit(1)
 		}
+	}
 
-		// Parse the .http file
-		req, err = parser.Parse(string(input))
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Parse error: %v\n", err)
-			os.Exit(1)
-		}
+	// Parse the request (auto-detects HTP or RFC compliant format)
+	req, err = parser.Parse(string(input))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Parse error: %v\n", err)
+		os.Exit(1)
 	}
 
 	// Validate the request

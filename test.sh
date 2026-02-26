@@ -123,11 +123,11 @@ else
 fi
 echo ""
 
-# Test 13: Load request from file
+# Test 13: Load request from file (with -f flag)
 echo "Test 13: Load RFC compliant request from file"
 TEMP_FILE="/tmp/test-load-request-$$.http"
 ./http -save-request "$TEMP_FILE" < examples/simple-get.http > /dev/null 2>&1
-./http -load-request "$TEMP_FILE" -dry-run > /dev/null 2>&1
+./http -f "$TEMP_FILE" -dry-run > /dev/null 2>&1
 if [ $? -eq 0 ]; then
     echo "✓ Request loaded from file"
     rm -f "$TEMP_FILE"
@@ -167,6 +167,23 @@ else
     echo "✗ Environment variables not preprocessed in saved file"
     cat "$STDERR_FILE"
     rm -f "$TEMP_FILE" "$STDERR_FILE"
+    exit 1
+fi
+echo ""
+
+# Test 16: Load HTP format file with -f flag
+echo "Test 16: Load HTP format file with -f flag"
+TEMP_FILE="/tmp/test-htp-format-$$.http"
+echo "# Comment in HTP format
+GET https://example.com HTTP/1.1
+Host: example.com" > "$TEMP_FILE"
+./http -f "$TEMP_FILE" -dry-run > /dev/null 2>&1
+if [ $? -eq 0 ]; then
+    echo "✓ HTP format loaded from file"
+    rm -f "$TEMP_FILE"
+else
+    echo "✗ Failed to load HTP format from file"
+    rm -f "$TEMP_FILE"
     exit 1
 fi
 echo ""
