@@ -126,6 +126,7 @@ func validateMethod(req *models.HTTPRequest, result *ValidationResult) {
 }
 
 // validateURL checks if the URL is valid and has a scheme
+// Note: This function may modify req.URL to construct a full URL from a path
 func validateURL(req *models.HTTPRequest, result *ValidationResult, noSecure bool) {
 	if req.URL == "" {
 		result.Errors = append(result.Errors, "URL is required")
